@@ -1,9 +1,13 @@
 import mc from 'minecraft-protocol'
 
 import { Prisma } from '@prisma/client'
-import { endOfDay, endOfMonth, endOfWeek, startOfDay, startOfMonth, startOfWeek } from 'date-fns'
+import {
+  subMilliseconds,
+} from 'date-fns'
 import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
+
+const pingPollingInterval = 5_000
 
 export interface CommonPingResult {
   maxPlayers: number
@@ -13,7 +17,7 @@ export interface CommonPingResult {
   version: string
   latency?: number
   favicon?: string
-  players?: { id: string, name: string } []
+  players?: { uuid: string, name: string } []
 }
 
 function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>): CommonPingResult {
@@ -30,7 +34,7 @@ function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>): Common
   else {
     // It's a NewPingResult
     return {
-      players: result.players.sample,
+      players: result.players.sample?.map(({ name, id }) => ({ name, uuid: id })),
       maxPlayers: result.players.max,
       playerCount: result.players.online,
       motd: typeof result.description === 'string' ? result.description : result.description.text || '',
@@ -106,14 +110,17 @@ async function trackPlayerSessions() {
     if (pingResult.offline || !pingResult.players) {
       continue
     }
-    logger.info(`Ping result ${server.host}`, pingResult)
+    logger.info(`Ping result ${server.host}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
 
-    const onlinePlayers = pingResult.players
-
-    await prisma.$transaction(onlinePlayers.map(player => prisma.player.upsert({
-      where: { uuid: player.id },
+    // Ensure all online players exist in the database
+    const onlinePlayers = await prisma.$transaction(pingResult.players.map(player => prisma.player.upsert({
+      select: {
+        uuid: true,
+        id: true,
+      },
+      where: { uuid: player.uuid },
       create: {
-        uuid: player.id,
+        uuid: player.uuid,
         name: player.name,
         serverId: server.id,
       },
@@ -123,119 +130,55 @@ async function trackPlayerSessions() {
       },
     })))
 
-    // Get the last known player sessions for the server
-    const lastSessions = await prisma.playerSession.findMany({
-      where: {
-        serverId: server.id,
-        endTime: null,
+    // Update end time for players who are still online
+    const lastDateToConsiderOnline = subMilliseconds(now, Math.max(pingPollingInterval * 1.5, 30_000))
+    logger.info(`Minimum time to be updated ${lastDateToConsiderOnline.toISOString()}`)
+    const usersToUpdateOnline = {
+      serverId: server.id,
+      endTime: {
+        gt: lastDateToConsiderOnline,
       },
-    })
+      player: {
+        uuid: {
+          in: onlinePlayers.map(player => player.uuid),
+        },
+      },
+    } as const
 
-    const onlinePlayerIds = onlinePlayers.map(player => player.id)
-    const lastSessionPlayerIds = lastSessions.map(session => session.playerId)
-
-    // End sessions for players who are no longer online
-    const endedSessions = lastSessions.filter(session => !onlinePlayerIds.includes(session.playerId))
-    for (const session of endedSessions) {
-      await prisma.playerSession.update({
-        where: { id: session.id },
-        data: { endTime: now },
-      })
-    }
-
-    // Start new sessions for players who are now online but were not in the last session
-    const newPlayerIds = onlinePlayerIds.filter(id => !lastSessionPlayerIds.includes(id))
-    for (const playerId of newPlayerIds) {
-      await prisma.playerSession.create({
+    const [usersUpdatedOnline] = await prisma.$transaction([
+      prisma.playerSession.findMany({
+        select: { player: { select: { uuid: true } } },
+        where: usersToUpdateOnline,
+      }),
+      prisma.playerSession.updateMany({
+        where: usersToUpdateOnline,
         data: {
-          playerId,
+          endTime: now,
+        },
+      }),
+    ])
+    logger.info(`Users updated online: ${usersUpdatedOnline.length}`)
+    const usersUpdatedOnlineUuid = usersUpdatedOnline.map(u => u.player.uuid)
+    const newUsers = onlinePlayers.filter(onlinePlayer => !usersUpdatedOnlineUuid.includes(onlinePlayer.uuid))
+
+    logger.info(`Just joined users: ${newUsers.length}`)
+
+    await prisma.$transaction(
+      newUsers.map(newUser => prisma.playerSession.create({
+        data: {
           serverId: server.id,
+          endTime: now,
           startTime: now,
+          playerId: newUser.id,
         },
-      })
-    }
+      })),
+    )
   }
-}
-
-// Function to calculate playtime
-async function calculatePlaytime(periodStart: Date, periodEnd: Date) {
-  const sessions = await prisma.playerSession.findMany({
-    where: {
-      OR: [
-        {
-          startTime: {
-            gte: periodStart,
-            lte: periodEnd,
-          },
-        },
-        {
-          endTime: {
-            gte: periodStart,
-            lte: periodEnd,
-          },
-        },
-      ],
-    },
-  })
-
-  const playtimeMap = new Map<string, number>()
-
-  for (const session of sessions) {
-    const start = session.startTime < periodStart ? periodStart : session.startTime
-    const end = session.endTime ? (session.endTime > periodEnd ? periodEnd : session.endTime) : periodEnd
-    const duration = (end.getTime() - start.getTime()) / 1000 // Convert to seconds
-
-    if (!playtimeMap.has(session.playerId)) {
-      playtimeMap.set(session.playerId, 0)
-    }
-    playtimeMap.set(session.playerId, playtimeMap.get(session.playerId)! + duration)
-  }
-
-  for (const [playerId, playtime] of playtimeMap.entries()) {
-    // Store playtime data in the relevant table (Daily, Weekly, Monthly)
-    await prisma.dailyPlaytime.upsert({
-      where: {
-        date_playerId_serverId: {
-          date: periodStart,
-          playerId,
-          serverId: '1', // Assuming server ID 1
-        },
-      },
-      update: {
-        playtime,
-      },
-      create: {
-        date: periodStart,
-        playerId,
-        serverId: '1', // Assuming server ID 1
-        playtime,
-      },
-    })
-  }
-}
-
-// Function to update playtimes
-async function updatePlaytimes() {
-  const now = new Date()
-
-  // Calculate daily playtime
-  await calculatePlaytime(startOfDay(now), endOfDay(now))
-
-  // Calculate weekly playtime
-  await calculatePlaytime(startOfWeek(now), endOfWeek(now))
-
-  // Calculate monthly playtime
-  await calculatePlaytime(startOfMonth(now), endOfMonth(now))
 }
 
 export async function startServerPolling() {
   // Periodically track player sessions
   setInterval(async () => {
     await trackPlayerSessions() // Assuming server ID 1
-  }, 5000) // Ping every 10 seconds
-
-  // Periodically update playtimes (e.g., every day at midnight)
-  setInterval(async () => {
-    await updatePlaytimes()
-  }, 24 * 60 * 60 * 1000) // Run every 24 hours
+  }, pingPollingInterval) // Ping every 10 seconds
 }

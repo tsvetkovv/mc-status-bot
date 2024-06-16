@@ -59,5 +59,8 @@
   },
   "lint-staged": {
     "*.ts": "eslint"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
