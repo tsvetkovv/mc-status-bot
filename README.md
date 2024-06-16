@@ -50,6 +50,10 @@ Follow these steps to set up and run your bot using this template:
     ```bash
     npm install
     ```
+    Run migrations:
+    ```bash
+    npx prisma migrate dev
+    ```
     Start the bot in watch mode (auto-reload when code changes):
     ```bash
     npm run dev
@@ -64,12 +68,19 @@ Follow these steps to set up and run your bot using this template:
 
     Set `NODE_ENV` environment variable to `production` in your `.env` file. <br />
     Update `BOT_WEBHOOK` with the actual URL where your bot will receive updates. <br />
-    Update `BOT_WEBHOOK_SECRET` with a random secret token.
+    Update `BOT_WEBHOOK_SECRET` with a random secret token. <br />
+    Update `DATABASE_URL` with a production database.
 
     ```dotenv
     NODE_ENV=production
     BOT_WEBHOOK=<server_url>/webhook
     BOT_WEBHOOK_SECRET=<random_secret_value>
+    DATABASE_URL=<production_db_url>
+    ```
+
+    Run migrations:
+    ```bash
+    npx prisma migrate deploy
     ```
 
     Start the bot in production mode:
@@ -312,6 +323,15 @@ bun add -d @types/bun
     </td>
     <td>
         Telegram Bot API token obtained from <a href="https://t.me/BotFather">@BotFather</a>.
+    </td>
+  </tr>
+  <tr>
+    <td>DATABASE_URL</td>
+    <td>
+        String
+    </td>
+    <td>
+        Database connection.
     </td>
   </tr>
     <tr>

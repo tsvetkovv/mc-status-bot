@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  telegramId BigInt   @unique
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+model Server {
+  id   String @id @default(cuid())
+  host String
+  port Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players         Player[]
+  playerSessions  PlayerSession[]
+  dailyPlaytime   DailyPlaytime[]
+  weeklyPlaytime  WeeklyPlaytime[]
+  monthlyPlaytime MonthlyPlaytime[]
+
+  @@unique([host, port])
+}
+
+model Player {
+  id              String            @id @default(cuid())
+  uuid            String            @unique
+  name            String
+  serverId        String
+  server          Server            @relation(fields: [serverId], references: [id])
+  sessions        PlayerSession[]
+  dailyPlaytime   DailyPlaytime[]
+  weeklyPlaytime  WeeklyPlaytime[]
+  monthlyPlaytime MonthlyPlaytime[]
+}
+
+model PlayerSession {
+  id        String    @id @default(cuid())
+  playerId  String
+  serverId  String
+  startTime DateTime
+  endTime   DateTime?
+  player    Player    @relation(fields: [playerId], references: [id])
+  server    Server    @relation(fields: [serverId], references: [id])
+}
+
+model DailyPlaytime {
+  id       String   @id @default(cuid())
+  date     DateTime
+  playerId String
+  serverId String
+  playtime Int // Total playtime in seconds
+  player   Player   @relation(fields: [playerId], references: [id])
+  server   Server   @relation(fields: [serverId], references: [id])
+
+  @@unique([date, playerId, serverId])
+}
+
+model WeeklyPlaytime {
+  id       String @id @default(cuid())
+  week     Int
+  year     Int
+  playerId String
+  serverId String
+  playtime Int // Total playtime in seconds
+  player   Player @relation(fields: [playerId], references: [id])
+  server   Server @relation(fields: [serverId], references: [id])
+
+  @@unique([week, year, playerId, serverId])
+}
+
+model MonthlyPlaytime {
+  id       String @id @default(cuid())
+  month    Int
+  year     Int
+  playerId String
+  serverId String
+  playtime Int // Total playtime in seconds
+  player   Player @relation(fields: [playerId], references: [id])
+  server   Server @relation(fields: [serverId], references: [id])
+
+  @@unique([month, year, playerId, serverId])
+}

@@ -1,10 +1,12 @@
 #!/usr/bin/env tsx
 
 import process from 'node:process'
+import { prisma } from './prisma/index.js'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import { createServer, createServerManager } from '#root/server/index.js'
+import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false
@@ -20,12 +22,17 @@ function onShutdown(cleanUp: () => Promise<void>) {
 }
 
 async function startPolling() {
-  const bot = createBot(config.BOT_TOKEN)
+  const bot = createBot(config.BOT_TOKEN, {
+    prisma,
+  })
 
   // graceful shutdown
   onShutdown(async () => {
     await bot.stop()
   })
+
+  // connect to database
+  await prisma.$connect()
 
   // start bot
   await bot.start({
@@ -39,7 +46,9 @@ async function startPolling() {
 }
 
 async function startWebhook() {
-  const bot = createBot(config.BOT_TOKEN)
+  const bot = createBot(config.BOT_TOKEN, {
+    prisma,
+  })
   const server = createServer(bot)
   const serverManager = createServerManager(server)
 
@@ -47,6 +56,9 @@ async function startWebhook() {
   onShutdown(async () => {
     await serverManager.stop()
   })
+
+  // connect to database
+  await prisma.$connect()
 
   // to prevent receiving updates before the bot is ready
   await bot.init()
@@ -74,6 +86,8 @@ async function startWebhook() {
     url: config.BOT_WEBHOOK,
   })
 }
+
+startServerPolling()
 
 try {
   if (config.BOT_MODE === 'webhook')

@@ -1,7 +1,6 @@
 import { autoChatAction } from '@grammyjs/auto-chat-action'
 import { hydrate } from '@grammyjs/hydrate'
 import { hydrateReply, parseMode } from '@grammyjs/parse-mode'
-import { conversations } from '@grammyjs/conversations'
 import type { BotConfig, StorageAdapter } from 'grammy'
 import { Bot as TelegramBot, session } from 'grammy'
 import type {
@@ -22,18 +21,19 @@ import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { updateLogger } from '#root/bot/middlewares/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
-import { greetingConversation } from '#root/bot/conversations/index.js'
+import type { PrismaClientX } from '#root/prisma/index.js'
 
 interface Options {
+  prisma: PrismaClientX
   sessionStorage?: StorageAdapter<SessionData>
   config?: Omit<BotConfig<Context>, 'ContextConstructor'>
 }
 
-export function createBot(token: string, options: Options = {}) {
-  const { sessionStorage } = options
+export function createBot(token: string, options: Options) {
+  const { sessionStorage, prisma } = options
   const bot = new TelegramBot(token, {
     ...options.config,
-    ContextConstructor: createContextConstructor({ logger }),
+    ContextConstructor: createContextConstructor({ logger, prisma }),
   })
   const protectedBot = bot.errorBoundary(errorHandler)
 
@@ -53,8 +53,6 @@ export function createBot(token: string, options: Options = {}) {
     }),
   )
   protectedBot.use(i18n)
-  protectedBot.use(conversations())
-  protectedBot.use(greetingConversation())
 
   // Handlers
   protectedBot.use(welcomeFeature)
