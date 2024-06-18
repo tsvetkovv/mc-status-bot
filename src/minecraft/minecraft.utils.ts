@@ -1,6 +1,5 @@
 import mc from 'minecraft-protocol'
 
-import { Prisma } from '@prisma/client'
 import {
   subMilliseconds,
 } from 'date-fns'
@@ -71,11 +70,26 @@ export async function addServer(url: string) {
   if (!host) {
     throw new Error('Incorrect host')
   }
-
   const port = Number.parseInt(parts.at(1) || '0')
+
+  const serverAddedAlready = await prisma.server.findUnique({
+    select: {
+      id: true,
+    },
+    where: {
+      host_port: {
+        host,
+        port,
+      },
+    },
+  })
+  if (serverAddedAlready !== null) {
+    return true
+  }
+
   const pingResponse = await pingServer({ host, port })
   logger.info(`Pinged`, pingResponse)
-  if (pingResponse) {
+  if (pingResponse && !pingResponse.offline) {
     try {
       await prisma.server.create({
         data: {
@@ -86,15 +100,10 @@ export async function addServer(url: string) {
       return true
     }
     catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === 'P2002') {
-          throw new Error('Server is already exist')
-        }
-      }
-      throw e
+      return false
     }
   }
-  throw new Error('The server is not available')
+  return false
 }
 
 // Function to track player sessions

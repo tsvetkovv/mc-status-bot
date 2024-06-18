@@ -8,10 +8,27 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  telegramId BigInt   @unique
-  updatedAt  DateTime @updatedAt
-  createdAt  DateTime @default(now())
+  id          String        @id @default(cuid())
+  telegramId  BigInt        @unique
+  liveMessage LiveMessage[]
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Group {
+  id          String        @id @default(cuid())
+  chatId      BigInt        @unique
+  liveMessage LiveMessage[]
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
 }
 
 model Server {
@@ -29,6 +46,35 @@ model Server {
   monthlyPlaytime MonthlyPlaytime[]
 
   @@unique([host, port])
+}
+
+model ChatWatcher {
+  id       String  @id @default(cuid())
+  tgChatId BigInt  @unique
+  isGroup  Boolean
+
+  liveMessages LiveMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LiveMessage {
+  id                  String      @id @default(cuid())
+  tgMessageId         BigInt
+  tgChatId            BigInt
+  chatWatcher         ChatWatcher @relation(fields: [chatWatcherTgChatId], references: [tgChatId])
+  chatWatcherTgChatId BigInt
+  addedById           String
+  addedBy             User        @relation(fields: [addedById], references: [id])
+
+  group   Group?  @relation(fields: [groupId], references: [id])
+  groupId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tgMessageId, tgChatId])
 }
 
 model Player {

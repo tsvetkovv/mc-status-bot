@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 
 import process from 'node:process'
+import { PrismaAdapter } from '@grammyjs/storage-prisma'
 import { prisma } from './prisma/index.js'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
@@ -24,6 +25,7 @@ function onShutdown(cleanUp: () => Promise<void>) {
 async function startPolling() {
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
+    sessionStorage: new PrismaAdapter(prisma.session),
   })
 
   // graceful shutdown
@@ -48,6 +50,7 @@ async function startPolling() {
 async function startWebhook() {
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
+    sessionStorage: new PrismaAdapter(prisma.session),
   })
   const server = createServer(bot)
   const serverManager = createServerManager(server)

@@ -3,6 +3,7 @@ import { hydrate } from '@grammyjs/hydrate'
 import { hydrateReply, parseMode } from '@grammyjs/parse-mode'
 import type { BotConfig, StorageAdapter } from 'grammy'
 import { Bot as TelegramBot, session } from 'grammy'
+import { conversations } from '@grammyjs/conversations'
 import type {
   Context,
   SessionData,
@@ -22,6 +23,8 @@ import { updateLogger } from '#root/bot/middlewares/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
+import { addingServerConversation } from '#root/bot/conversations/index.js'
+import { addServerFeature } from '#root/bot/features/add_server.js'
 
 interface Options {
   prisma: PrismaClientX
@@ -54,9 +57,14 @@ export function createBot(token: string, options: Options) {
   )
   protectedBot.use(i18n)
 
+  // conversations
+  protectedBot.use(conversations())
+  protectedBot.use(addingServerConversation())
+
   // Handlers
   protectedBot.use(welcomeFeature)
   protectedBot.use(adminFeature)
+  protectedBot.use(addServerFeature)
 
   if (isMultipleLocales)
     protectedBot.use(languageFeature)
