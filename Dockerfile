@@ -28,18 +28,25 @@ COPY package*.json ./
 # Install only production app dependencies
 RUN npm ci --omit=dev
 
-ADD prisma .
-RUN npx prisma generate
+# Copy Prisma files
+COPY prisma ./prisma/
 
-VOLUME /usr/src/data
+# Ensure the SQLite directory is created and has the correct permissions
+RUN mkdir -p /usr/src/data && chown -R node:node /usr/src/data
+
 
 # Bundle app source
 COPY . .
 
 USER node
 
+RUN npx prisma generate
+
+VOLUME /usr/src/data
+
 # Start the app
 EXPOSE 3000
 
 RUN npx prisma migrate deploy
+
 CMD ["npm", "run", "start:force"]
