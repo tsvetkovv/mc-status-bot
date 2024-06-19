@@ -37,7 +37,7 @@ COPY --from=deps /myapp/node_modules /myapp/node_modules
 ADD prisma .
 RUN npx prisma generate
 
-ADD . .
+COPY . .
 
 # Finally, build the production image with minimal footprint
 FROM base
@@ -61,14 +61,13 @@ COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma /myapp/prisma
-COPY --from=build /myapp/src /myapp/src
-COPY . .
+COPY --from=build /myapp/src /myapp/src  # Ensure src is copied from build stage
 
 VOLUME /sqlite
-ADD . .
+COPY . .
 
 EXPOSE ${PORT}
 
-RUN chmod +x /myapp/other/docker-entry-point.sh
+RUN chmod +x /myapp/docker-entry-point.sh
 
-ENTRYPOINT ["/myapp/other/docker-entry-point.sh"]
+ENTRYPOINT ["/myapp/docker-entry-point.sh"]
