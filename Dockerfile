@@ -31,7 +31,7 @@ RUN npm ci --omit=dev
 ADD prisma .
 RUN npx prisma generate
 
-VOLUME /sqlite
+VOLUME /usr/src/data
 
 # Bundle app source
 COPY . .
