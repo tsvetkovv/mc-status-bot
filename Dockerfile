@@ -5,7 +5,7 @@ FROM node:20-bookworm-slim as base
 ENV NODE_ENV production
 
 # Install openssl for Prisma
-RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates python3 python3-pip curl wget                                                                                                       wget
+RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates python3 python3-pip curl wget
 
 # Install all node_modules, including dev dependencies
 FROM base as deps
@@ -61,7 +61,8 @@ COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma /myapp/prisma
-COPY --from=build /myapp/src /myapp/src  # Add this line to copy the src directory
+COPY --from=build /myapp/src /myapp/src
+COPY . .
 
 VOLUME /sqlite
 ADD . .
