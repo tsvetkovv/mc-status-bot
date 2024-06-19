@@ -25,6 +25,9 @@ COPY package*.json ./
 # Install only production app dependencies
 RUN npm ci --omit=dev
 
+ADD prisma .
+RUN npx prisma generate
+
 VOLUME /sqlite
 
 # Bundle app source
@@ -34,5 +37,6 @@ USER node
 
 # Start the app
 EXPOSE 3000
-CMD ["npx", "prisma", "deploy"]
+
+RUN npx prisma migrate deploy
 CMD ["npm", "run", "start:force"]
