@@ -34,19 +34,26 @@ COPY prisma ./prisma/
 # Ensure the SQLite directory is created and has the correct permissions
 RUN mkdir -p /usr/src/data && chown -R node:node /usr/src/data
 
-
 # Bundle app source
-COPY . .
+COPY --chown=node:node . .
 
+# Change to the node user
 USER node
 
+# Set the working directory to the app directory
+WORKDIR /usr/src
+
+# Generate Prisma client
 RUN npx prisma generate
 
+# Ensure the SQLite volume is writable
 VOLUME /usr/src/data
 
-# Start the app
+# Expose the port the app runs on
 EXPOSE 3000
 
+# Deploy Prisma migrations
 RUN npx prisma migrate deploy
 
+# Start the app
 CMD ["npm", "run", "start:force"]
