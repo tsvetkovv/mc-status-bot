@@ -61,7 +61,7 @@ COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma /myapp/prisma
-COPY --from=build /myapp/src /myapp/src  # Ensure src is copied from build stage
+COPY --from=build /myapp/src /myapp/src
 
 VOLUME /sqlite
 COPY . .
