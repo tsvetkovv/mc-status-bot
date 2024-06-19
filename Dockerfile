@@ -43,6 +43,9 @@ USER node
 # Set the working directory to the app directory
 WORKDIR /usr/src
 
+# Ensure node_modules directory is writable
+RUN chown -R node:node /usr/src/node_modules
+
 # Generate Prisma client
 RUN npx prisma generate
 
