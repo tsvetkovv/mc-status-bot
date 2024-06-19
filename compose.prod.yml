@@ -1,5 +1,0 @@
-services:
-
-  bot:
-    env_file:
-      - .env.bot.prod

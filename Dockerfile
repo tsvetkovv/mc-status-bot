@@ -25,11 +25,14 @@ COPY package*.json ./
 # Install only production app dependencies
 RUN npm ci --omit=dev
 
+VOLUME /sqlite
+
 # Bundle app source
 COPY . .
 
 USER node
 
 # Start the app
-EXPOSE 80
+EXPOSE 3000
+CMD ["npx", "prisma", "deploy"]
 CMD ["npm", "run", "start:force"]
