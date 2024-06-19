@@ -1,5 +1,8 @@
 FROM node:lts-slim AS base
 
+# Install openssl for Prisma
+RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates python3 python3-pip curl wget                                                                                                       wget
+
 # Create app directory
 WORKDIR /usr/src
 
