@@ -49,7 +49,7 @@ ENV DATABASE_URL="file:$DATABASE_PATH"
 ENV PORT="3000"
 ENV NODE_ENV="production"
 # For WAL support: https://github.com/prisma/prisma-engines/issues/4675#issuecomment-1914383246
-ENV PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK = "1"
+ENV PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK="1"
 
 # add shortcut for connecting to database CLI
 RUN echo "#!/bin/sh\nset -x\nsqlite3 \$DATABASE_URL" > /usr/local/bin/database-cli && chmod +x /usr/local/bin/database-cli
@@ -61,6 +61,7 @@ COPY --from=build /myapp/node_modules/.prisma /myapp/node_modules/.prisma
 
 COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma /myapp/prisma
+COPY --from=build /myapp/src /myapp/src  # Add this line to copy the src directory
 
 VOLUME /sqlite
 ADD . .
