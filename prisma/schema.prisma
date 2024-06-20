@@ -32,20 +32,15 @@ model Session {
 }
 
 model Server {
-  id   String @id @default(cuid())
-  host String
-  port Int    @default(0)
+  id      String @id @default(cuid())
+  address String @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  players         Player[]
-  playerSessions  PlayerSession[]
-  dailyPlaytime   DailyPlaytime[]
-  weeklyPlaytime  WeeklyPlaytime[]
-  monthlyPlaytime MonthlyPlaytime[]
-
-  @@unique([host, port])
+  players        Player[]
+  playerSessions PlayerSession[]
+  liveMessage    LiveMessage[]
 }
 
 model ChatWatcher {
@@ -61,32 +56,34 @@ model ChatWatcher {
 
 model LiveMessage {
   id                  String      @id @default(cuid())
-  tgMessageId         BigInt
+  tgMessageId         Int
   tgChatId            BigInt
-  chatWatcher         ChatWatcher @relation(fields: [chatWatcherTgChatId], references: [tgChatId])
+  chatWatcher         ChatWatcher @relation(fields: [chatWatcherTgChatId], references: [tgChatId], onDelete: Cascade, onUpdate: Cascade)
   chatWatcherTgChatId BigInt
   addedById           String
   addedBy             User        @relation(fields: [addedById], references: [id])
 
-  group   Group?  @relation(fields: [groupId], references: [id])
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupId String?
+
+  server   Server   @relation(fields: [serverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  editable Boolean  @default(true)
+  editedAt DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  serverId  String
 
   @@unique([tgMessageId, tgChatId])
 }
 
 model Player {
-  id              String            @id @default(cuid())
-  uuid            String            @unique
-  name            String
-  serverId        String
-  servers         Server[]
-  sessions        PlayerSession[]
-  dailyPlaytime   DailyPlaytime[]
-  weeklyPlaytime  WeeklyPlaytime[]
-  monthlyPlaytime MonthlyPlaytime[]
+  id       String          @id @default(cuid())
+  uuid     String          @unique
+  name     String
+  serverId String
+  servers  Server[]
+  sessions PlayerSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,42 +100,4 @@ model PlayerSession {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model DailyPlaytime {
-  id       String   @id @default(cuid())
-  date     DateTime
-  playerId String
-  serverId String
-  playtime Int // Total playtime in seconds
-  player   Player   @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  server   Server   @relation(fields: [serverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([date, playerId, serverId])
-}
-
-model WeeklyPlaytime {
-  id       String @id @default(cuid())
-  week     Int
-  year     Int
-  playerId String
-  serverId String
-  playtime Int // Total playtime in seconds
-  player   Player @relation(fields: [playerId], references: [id])
-  server   Server @relation(fields: [serverId], references: [id])
-
-  @@unique([week, year, playerId, serverId])
-}
-
-model MonthlyPlaytime {
-  id       String @id @default(cuid())
-  month    Int
-  year     Int
-  playerId String
-  serverId String
-  playtime Int // Total playtime in seconds
-  player   Player @relation(fields: [playerId], references: [id])
-  server   Server @relation(fields: [serverId], references: [id])
-
-  @@unique([month, year, playerId, serverId])
 }

@@ -7,7 +7,8 @@ import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import { createServer, createServerManager } from '#root/server/index.js'
-import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
+import { startServerPolling } from '#root/minecraft/playerService.js'
+import { ServerPoller } from '#root/bot/background-job/server-poller.js'
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false
@@ -21,11 +22,13 @@ function onShutdown(cleanUp: () => Promise<void>) {
   process.on('SIGINT', handleShutdown)
   process.on('SIGTERM', handleShutdown)
 }
+const serverPoller = new ServerPoller()
 
 async function startPolling() {
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
     sessionStorage: new PrismaAdapter(prisma.session),
+    serverPoller,
   })
 
   // graceful shutdown
@@ -51,6 +54,7 @@ async function startWebhook() {
   const bot = createBot(config.BOT_TOKEN, {
     prisma,
     sessionStorage: new PrismaAdapter(prisma.session),
+    serverPoller,
   })
   const server = createServer(bot)
   const serverManager = createServerManager(server)

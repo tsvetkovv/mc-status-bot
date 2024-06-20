@@ -3,9 +3,9 @@ import { createConversation } from '@grammyjs/conversations'
 import type { Prisma } from '@prisma/client'
 import type { Context } from '#root/bot/context.js'
 import { i18n } from '#root/bot/i18n.js'
-import { addServer } from '#root/minecraft/minecraft.utils.js'
 import { prisma } from '#root/prisma/index.js'
 import { logger } from '#root/logger.js'
+import { addServer } from '#root/minecraft/serverService.js'
 
 export const CONV_ADDING_SERVER = 'adding-server'
 
@@ -49,6 +49,11 @@ export function addingServerConversation() {
                 liveMessages: {
                   create: {
                     tgChatId,
+                    server: {
+                      connect: {
+                        id: response.id,
+                      },
+                    },
                     tgMessageId: message.message_id,
                     addedBy: {
                       connectOrCreate: {

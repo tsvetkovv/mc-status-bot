@@ -4,6 +4,15 @@ language_command =
     .description = Change language
 setcommands_command =
     .description = Set bot commands
+addserver_command =
+    .description = Add minecraft server to watch
+removeserver_command =
+    .description = Remove the history and stop pinging the server
+listservers_command =
+    .description = See all servers
+
+chats_command =
+    .description = See chats with live messages
 
 welcome = Welcome!
 language = 

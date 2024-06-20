@@ -45,8 +45,10 @@ function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>): Common
   }
 }
 
-export async function pingServer(params: { host: string, port?: number }) {
-  const { host, port } = params
+export async function pingServer(address: string) {
+  const [host, rawPort] = address.split(':')
+
+  const port = rawPort && Number.parseInt(rawPort) > 0 ? Number.parseInt(rawPort) : undefined
 
   try {
     const pingResponse = await mc.ping({
@@ -58,43 +60,33 @@ export async function pingServer(params: { host: string, port?: number }) {
     return { ...toCommonPingResult(pingResponse), host, port, offline: false } as const
   }
   catch (error) {
-    logger.info('Ping failed', params, error)
+    logger.info('Ping failed', address, error)
     return { host, port, offline: true } as const
   }
 }
 
-export async function addServer(url: string) {
-  logger.info(`Adding server ${url}`)
-  const parts = url.split(':')
-  const host = parts.at(0)
-  if (!host) {
-    throw new Error('Incorrect host')
-  }
-  const port = Number.parseInt(parts.at(1) || '0')
+export async function addServer(address: string) {
+  logger.info(`Adding server: ${address}`)
 
   const serverAddedAlready = await prisma.server.findUnique({
     select: {
       id: true,
     },
     where: {
-      host_port: {
-        host,
-        port,
-      },
+      address,
     },
   })
   if (serverAddedAlready !== null) {
     return true
   }
 
-  const pingResponse = await pingServer({ host, port })
+  const pingResponse = await pingServer(address)
   logger.info(`Pinged`, pingResponse)
   if (pingResponse && !pingResponse.offline) {
     try {
       await prisma.server.create({
         data: {
-          host,
-          port: port || 0,
+          address,
         },
       })
       return true
@@ -112,14 +104,14 @@ async function trackPlayerSessions() {
 
   for (const server of servers) {
     const now = new Date()
-    logger.info(`Pinging ${server.host}`, server)
+    logger.info(`Pinging ${server.address}`, server)
     // Ping the server to get the current online players
-    const pingResult = await pingServer({ host: server.host, port: server.port })
+    const pingResult = await pingServer(server.address)
 
     if (pingResult.offline || !pingResult.players) {
       continue
     }
-    logger.info(`Ping result ${server.host}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
+    logger.info(`Ping result ${server.address}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
 
     // Ensure all online players exist in the database
     const onlinePlayers = await prisma.$transaction(pingResult.players.map(player => prisma.player.upsert({

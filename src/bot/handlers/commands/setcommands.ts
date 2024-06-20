@@ -17,6 +17,22 @@ function getPrivateChatCommands(localeCode: string): BotCommand[] {
       command: 'start',
       description: i18n.t(localeCode, 'start_command.description'),
     },
+    {
+      command: 'addserver',
+      description: i18n.t(localeCode, 'addserver_command.description'),
+    },
+    {
+      command: 'removeserver',
+      description: i18n.t(localeCode, 'removeserver_command.description'),
+    },
+    {
+      command: 'listservers',
+      description: i18n.t(localeCode, 'listservers_command.description'),
+    },
+    {
+      command: 'chats',
+      description: i18n.t(localeCode, 'chats_command.description'),
+    },
   ]
 }
 

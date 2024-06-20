@@ -24,19 +24,21 @@ import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
 import { addingServerConversation } from '#root/bot/conversations/index.js'
-import { addServerFeature } from '#root/bot/features/add_server.js'
+import { addServerFeature } from '#root/bot/features/server.js'
+import type { ServerPoller } from '#root/bot/background-job/server-poller.js'
 
 interface Options {
   prisma: PrismaClientX
   sessionStorage?: StorageAdapter<SessionData>
+  serverPoller: ServerPoller
   config?: Omit<BotConfig<Context>, 'ContextConstructor'>
 }
 
 export function createBot(token: string, options: Options) {
-  const { sessionStorage, prisma } = options
+  const { sessionStorage, prisma, serverPoller } = options
   const bot = new TelegramBot(token, {
     ...options.config,
-    ContextConstructor: createContextConstructor({ logger, prisma }),
+    ContextConstructor: createContextConstructor({ logger, prisma, serverPoller }),
   })
   const protectedBot = bot.errorBoundary(errorHandler)
 

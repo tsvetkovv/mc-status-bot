@@ -23,7 +23,7 @@
     "start:force": "tsx ./src/main.ts",
     "prepare": "husky || true",
     "prisma:studio": "prisma studio",
-    "setup": "prisma generate && prisma migrate deploy"
+    "prisma:push": "prisma db push --accept-data-loss"
   },
   "dependencies": {
     "@grammyjs/auto-chat-action": "0.1.1",

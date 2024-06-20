@@ -7,6 +7,7 @@ import type { ParseModeFlavor } from '@grammyjs/parse-mode'
 import type { ConversationFlavor } from '@grammyjs/conversations'
 import type { Logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
+import type { ServerPoller } from '#root/bot/background-job/server-poller.js'
 
 export interface SessionData {
   // field?: string;
@@ -15,6 +16,7 @@ export interface SessionData {
 interface ExtendedContextFlavor {
   prisma: PrismaClientX
   logger: Logger
+  serverPoller: ServerPoller
 }
 
 export type Context = ParseModeFlavor<
@@ -31,13 +33,15 @@ export type Context = ParseModeFlavor<
 interface Dependencies {
   prisma: PrismaClientX
   logger: Logger
+  serverPoller: ServerPoller
 }
 
-export function createContextConstructor({ logger, prisma }: Dependencies) {
+export function createContextConstructor({ logger, prisma, serverPoller }: Dependencies) {
   return class extends DefaultContext implements ExtendedContextFlavor {
     prisma: PrismaClientX
 
     logger: Logger
+    serverPoller: ServerPoller
 
     constructor(update: Update, api: Api, me: UserFromGetMe) {
       super(update, api, me)
@@ -46,6 +50,7 @@ export function createContextConstructor({ logger, prisma }: Dependencies) {
       this.logger = logger.child({
         update_id: this.update.update_id,
       })
+      this.serverPoller = serverPoller
     }
   } as unknown as new (update: Update, api: Api, me: UserFromGetMe) => Context
 }
