@@ -4,6 +4,6 @@ services:
     build:
       context: .
     env_file:
-        - .env
+      - .env
     volumes:
       - './data:/usr/src/data'
