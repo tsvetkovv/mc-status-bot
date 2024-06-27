@@ -38,9 +38,10 @@ model Server {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  players        Player[]
-  playerSessions PlayerSession[]
-  liveMessage    LiveMessage[]
+  isPollingEnabled Boolean         @default(true)
+  players          Player[]
+  playerSessions   PlayerSession[]
+  liveMessage      LiveMessage[]
 }
 
 model ChatWatcher {
@@ -57,7 +58,6 @@ model ChatWatcher {
 model LiveMessage {
   id                  String      @id @default(cuid())
   tgMessageId         Int
-  tgChatId            BigInt
   chatWatcher         ChatWatcher @relation(fields: [chatWatcherTgChatId], references: [tgChatId], onDelete: Cascade, onUpdate: Cascade)
   chatWatcherTgChatId BigInt
   addedById           String
@@ -74,7 +74,7 @@ model LiveMessage {
   updatedAt DateTime @updatedAt
   serverId  String
 
-  @@unique([tgMessageId, tgChatId])
+  @@unique([tgMessageId, chatWatcherTgChatId])
 }
 
 model Player {

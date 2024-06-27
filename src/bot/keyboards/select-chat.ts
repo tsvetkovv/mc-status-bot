@@ -1,0 +1,36 @@
+import { Keyboard } from 'grammy'
+
+export const selectChatKeyboard = new Keyboard().requestChat('Select group', 0, {
+  bot_is_member: true,
+  chat_is_channel: false,
+  user_administrator_rights: {
+    can_pin_messages: true,
+    can_edit_messages: true,
+    can_delete_messages: true,
+    is_anonymous: false,
+    can_manage_chat: false,
+    can_manage_video_chats: false,
+    can_restrict_members: false,
+    can_promote_members: false,
+    can_change_info: false,
+    can_invite_users: false,
+    can_post_stories: false,
+    can_edit_stories: false,
+    can_delete_stories: false,
+  },
+  bot_administrator_rights: {
+    can_pin_messages: true,
+    can_edit_messages: true,
+    can_delete_messages: true,
+    is_anonymous: false,
+    can_manage_chat: false,
+    can_manage_video_chats: false,
+    can_restrict_members: false,
+    can_promote_members: false,
+    can_change_info: false,
+    can_invite_users: false,
+    can_post_stories: false,
+    can_edit_stories: false,
+    can_delete_stories: false,
+  },
+}).row().text('Just this chat')

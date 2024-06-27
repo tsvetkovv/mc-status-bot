@@ -25,20 +25,20 @@ import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
 import { addingServerConversation } from '#root/bot/conversations/index.js'
 import { addServerFeature } from '#root/bot/features/server.js'
-import type { ServerPoller } from '#root/bot/background-job/server-poller.js'
+import { ServerPoller } from '#root/bot/middlewares/server-poller.js'
+import { pinnedFeature } from '#root/bot/features/remove-pinned.js'
 
 interface Options {
   prisma: PrismaClientX
   sessionStorage?: StorageAdapter<SessionData>
-  serverPoller: ServerPoller
   config?: Omit<BotConfig<Context>, 'ContextConstructor'>
 }
 
 export function createBot(token: string, options: Options) {
-  const { sessionStorage, prisma, serverPoller } = options
+  const { sessionStorage, prisma } = options
   const bot = new TelegramBot(token, {
     ...options.config,
-    ContextConstructor: createContextConstructor({ logger, prisma, serverPoller }),
+    ContextConstructor: createContextConstructor({ logger, prisma }),
   })
   const protectedBot = bot.errorBoundary(errorHandler)
 
@@ -58,6 +58,7 @@ export function createBot(token: string, options: Options) {
     }),
   )
   protectedBot.use(i18n)
+  protectedBot.use(new ServerPoller(bot))
 
   // conversations
   protectedBot.use(conversations())
@@ -67,6 +68,7 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(welcomeFeature)
   protectedBot.use(adminFeature)
   protectedBot.use(addServerFeature)
+  protectedBot.use(pinnedFeature)
 
   if (isMultipleLocales)
     protectedBot.use(languageFeature)

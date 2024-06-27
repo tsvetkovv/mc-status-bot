@@ -1,4 +1,4 @@
-import { Composer } from 'grammy'
+import { Composer, Keyboard } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { CONV_ADDING_SERVER } from '#root/bot/conversations/index.js'
@@ -12,9 +12,11 @@ feature.command('addserver', logHandle('command-addserver'), (ctx) => {
   return ctx.conversation.enter(CONV_ADDING_SERVER)
 })
 
-feature
+const adminFeature = feature
   .chatType('private')
   .filter(isAdmin)
+
+adminFeature
   .command('listservers', logHandle('command-listservers'), async (ctx) => {
     const allServers = await ctx.prisma.server.findMany({
       orderBy: {
@@ -29,12 +31,61 @@ feature
     }
     await ctx.reply(msg)
   })
-  .command('startpolling', logHandle('command-startpolling'), async (ctx) => {
-    await ctx.serverPoller.start()
+
+adminFeature.command('startpolling', logHandle('command-startpolling'), async (ctx) => {
+  ctx.serverPoller.start()
+})
+adminFeature.command('stoppolling', async (ctx) => {
+  await ctx.reply('Server polling stopped.')
+})
+adminFeature.command('choosegroup', logHandle('command-choosegroup'), async (ctx) => {
+  const keyboard = new Keyboard().requestChat('Choose a group', 0, {
+    bot_is_member: true,
+    chat_is_channel: false,
+    request_title: true,
+    user_administrator_rights: {
+      can_pin_messages: true,
+      can_edit_messages: true,
+      can_delete_messages: true,
+      is_anonymous: false,
+      can_manage_chat: false,
+      can_manage_video_chats: false,
+      can_restrict_members: false,
+      can_promote_members: false,
+      can_change_info: false,
+      can_invite_users: false,
+      can_post_stories: false,
+      can_edit_stories: false,
+      can_delete_stories: false,
+    },
+    bot_administrator_rights: {
+      can_pin_messages: true,
+      can_edit_messages: true,
+      can_delete_messages: true,
+      is_anonymous: false,
+      can_manage_chat: false,
+      can_manage_video_chats: false,
+      can_restrict_members: false,
+      can_promote_members: false,
+      can_change_info: false,
+      can_invite_users: false,
+      can_post_stories: false,
+      can_edit_stories: false,
+      can_delete_stories: false,
+    },
+  }).row().text('Just this chat')
+  await ctx.reply('Choose a group', {
+    reply_markup: keyboard,
   })
-  .command('stoppolling', async (ctx) => {
-    await ctx.reply('Server polling stopped.')
+})
+
+feature.on('msg:chat_shared', logHandle('msg:chat_shared'), async (ctx) => {
+  await ctx.reply(JSON.stringify(ctx.message.chat_shared), {
+    reply_markup: {
+      remove_keyboard: true,
+    },
   })
+})
 
 feature.hears(/\/remove_(.+)/, logHandle('command-remove'), async (ctx) => {
   const idToRemove = ctx.match[1]
@@ -63,5 +114,7 @@ feature.hears(/\/confirm_removal_(.+)/, logHandle('command-remove'), async (ctx)
     }
   }
 })
+
+feature.callbackQuery('gr')
 
 export { composer as addServerFeature }
