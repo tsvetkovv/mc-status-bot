@@ -7,7 +7,6 @@ import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import { createServer, createServerManager } from '#root/server/index.js'
-import { startServerPolling } from '#root/minecraft/playerService.js'
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false
@@ -90,7 +89,7 @@ async function startWebhook() {
   })
 }
 
-startServerPolling()
+// startServerPolling()
 
 try {
   if (config.BOT_MODE === 'webhook')

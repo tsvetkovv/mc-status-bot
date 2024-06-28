@@ -123,11 +123,9 @@ async function trackPlayerSessions() {
       create: {
         uuid: player.uuid,
         name: player.name,
-        serverId: server.id,
       },
       update: {
         name: player.name,
-        serverId: server.id,
       },
     })))
 
@@ -176,10 +174,20 @@ async function trackPlayerSessions() {
     )
   }
 }
-
-export async function startServerPolling() {
+export function startServerPolling() {
   // Periodically track player sessions
-  setInterval(async () => {
-    await trackPlayerSessions() // Assuming server ID 1
-  }, pingPollingInterval) // Ping every 10 seconds
+  const scheduleTrackPlayerSessions = async () => {
+    const startTime = performance.now()
+
+    await trackPlayerSessions()
+
+    const endTime = performance.now()
+    const executionTime = endTime - startTime
+
+    logger.info(`Server polling completed in: ${executionTime.toFixed(2)} ms`)
+
+    setTimeout(scheduleTrackPlayerSessions, pingPollingInterval)
+  }
+
+  scheduleTrackPlayerSessions()
 }

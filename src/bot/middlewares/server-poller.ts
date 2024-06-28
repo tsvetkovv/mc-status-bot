@@ -5,6 +5,7 @@ import { logger } from '#root/logger.js'
 import type { CommonPingResult } from '#root/minecraft/pingService.js'
 import { pingServer } from '#root/minecraft/pingService.js'
 import type { Bot } from '#root/bot/index.js'
+import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
 
 export interface ServerStatus {
   serverId: string
@@ -40,7 +41,7 @@ export interface ServerPollerFlavor {
 }
 
 export class ServerPoller {
-  private pollingInterval: NodeJS.Timeout | null = null
+  private pollingTimeoutId: NodeJS.Timeout | null = null
   private config: ServerPollerConfig
   private bot: Bot
 
@@ -48,29 +49,45 @@ export class ServerPoller {
     this.config = { intervalMs: 5000, ...config }
     this.bot = bot
     this.start()
+    startServerPolling()
   }
 
   start() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval)
+    if (this.pollingTimeoutId) {
+      clearTimeout(this.pollingTimeoutId)
+      this.pollingTimeoutId = null
     }
 
-    this.pollingInterval = setInterval(async () => {
+    this.scheduleNextPoll()
+
+    logger.info(`Server polling started with interval of ${this.config.intervalMs}ms`)
+  }
+
+  private scheduleNextPoll() {
+    this.pollingTimeoutId = setTimeout(async () => {
+      const startTime = performance.now()
+
       try {
         await this.pollServers()
       }
       catch (error) {
         logger.error('Error in server polling:', error)
       }
-    }, this.config.intervalMs)
+      finally {
+        const endTime = performance.now()
+        const executionTime = endTime - startTime
 
-    logger.info(`Server polling started with interval of ${this.config.intervalMs}ms`)
+        logger.info(`Chat updating completed in ${executionTime.toFixed(2)} ms`)
+
+        this.scheduleNextPoll() // Schedule the next poll after completion
+      }
+    }, this.config.intervalMs)
   }
 
   stop() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval)
-      this.pollingInterval = null
+    if (this.pollingTimeoutId) {
+      clearInterval(this.pollingTimeoutId)
+      this.pollingTimeoutId = null
       logger.info('Server polling stopped')
     }
   }
@@ -84,12 +101,12 @@ export class ServerPoller {
         return {
           serverId: server.id,
           address: server.address,
-          status: 'offline' in pingResult
+          status: pingResult.offline
             ? { online: false as const }
             : { online: true as const, pingResult },
           players: players.map(p => ({
             name: p.name,
-            lastSeen: p.sessions[0].endTime,
+            lastSeen: p.lastSeen,
           })),
         }
       }),
@@ -100,18 +117,23 @@ export class ServerPoller {
       const subscribedChats = await this.getSubscribedChats(status.serverId)
       logger.debug(`Found ${subscribedChats.length} chats to send status update to`)
       for (const liveMsg of subscribedChats) {
-        logger.debug(`Sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${liveMsg.tgMessageId}`)
-        const text = this.formatStatusMessage(status) || 'test'
+        const messageId = liveMsg.tgMessageId
+        logger.debug(`Sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${messageId}`)
+        const text = this.formatStatusMessage(status)
+        const chatId = liveMsg.chatWatcherTgChatId.toString()
         try {
-          await this.bot.api.editMessageText(liveMsg.chatWatcherTgChatId.toString(), liveMsg.tgMessageId, text)
+          await this.bot.api.editMessageText(chatId, messageId, text)
         }
         catch (error) {
-          await this.bot.api.deleteMessage(liveMsg.chatWatcherTgChatId.toString(), liveMsg.tgMessageId).catch(e => logger.info(`Error deleting message ${liveMsg.tgMessageId} in chat ${liveMsg.chatWatcherTgChatId}`, e))
-          logger.error(`Error sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${liveMsg.tgMessageId}`, error)
-          const newMsg = await this.bot.api.sendMessage(liveMsg.chatWatcherTgChatId.toString(), text)
-          await this.bot.api.pinChatMessage(liveMsg.chatWatcherTgChatId.toString(), newMsg.message_id).catch(e => logger.info(`Error pinning message ${newMsg.message_id} in chat ${liveMsg.chatWatcherTgChatId}`, e))
+          await this.bot.api.deleteMessage(chatId, messageId).catch(e => logger.info(`Error deleting message ${messageId} in chat ${liveMsg.chatWatcherTgChatId}`, e))
+          const newMsg = await this.bot.api.sendMessage(chatId, text)
+          await this.bot.api.pinChatMessage(chatId, newMsg.message_id).catch(e => logger.info(`Error pinning message ${newMsg.message_id} in chat ${liveMsg.chatWatcherTgChatId}`, e))
           // add this message to the database
           await prisma.liveMessage.create({
+            select: {
+              chatWatcherTgChatId: true,
+              tgMessageId: true,
+            },
             data: {
               serverId: status.serverId,
               tgMessageId: newMsg.message_id,
@@ -146,21 +168,35 @@ export class ServerPoller {
   }
 
   private async getRecentPlayers(serverId: string) {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    return prisma.player.findMany({
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    const recentSessions = await prisma.playerSession.findMany({
       where: {
-        servers: { some: { id: serverId } },
-        sessions: { some: { endTime: { gte: twentyFourHoursAgo } } },
+        serverId,
+        OR: [
+          { endTime: { gte: oneWeekAgo } },
+          { endTime: null },
+        ],
+      },
+      orderBy: {
+        endTime: 'desc',
       },
       select: {
-        name: true,
-        sessions: {
-          orderBy: { endTime: 'desc' },
-          take: 1,
-          select: { endTime: true },
+        player: {
+          select: {
+            name: true,
+          },
         },
+        endTime: true,
       },
+      distinct: ['playerId'],
     })
+
+    const players = recentSessions.map(session => ({
+      name: session.player.name,
+      lastSeen: session.endTime,
+    }))
+    return players
   }
 
   private formatStatusMessage(status: ServerStatus): string {
@@ -199,7 +235,14 @@ export class ServerPoller {
 
     const playerList = [onlinePlayers, offlinePlayers].filter(Boolean).join('\n')
 
-    return `${header}\n${playerList}`
+    // show current time with hours, minutes, seconds
+    const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false })
+    return `
+${header}
+
+${playerList}
+    
+Updated at ${currentTime}`
   }
 
   private async getActiveServers() {

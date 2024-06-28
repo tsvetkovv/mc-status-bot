@@ -39,7 +39,6 @@ model Server {
   updatedAt DateTime @updatedAt
 
   isPollingEnabled Boolean         @default(true)
-  players          Player[]
   playerSessions   PlayerSession[]
   liveMessage      LiveMessage[]
 }
@@ -81,8 +80,6 @@ model Player {
   id       String          @id @default(cuid())
   uuid     String          @unique
   name     String
-  serverId String
-  servers  Server[]
   sessions PlayerSession[]
 
   createdAt DateTime @default(now())
