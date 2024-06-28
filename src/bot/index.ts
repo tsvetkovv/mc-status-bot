@@ -27,6 +27,7 @@ import { addingServerConversation } from '#root/bot/conversations/index.js'
 import { addServerFeature } from '#root/bot/features/server.js'
 import { ServerPoller } from '#root/bot/middlewares/server-poller.js'
 import { pinnedFeature } from '#root/bot/features/remove-pinned.js'
+import { cancelConversationFeature } from '#root/bot/conversations/cancelConversation.js'
 
 interface Options {
   prisma: PrismaClientX
@@ -62,6 +63,7 @@ export function createBot(token: string, options: Options) {
 
   // conversations
   protectedBot.use(conversations())
+  protectedBot.use(cancelConversationFeature)
   protectedBot.use(addingServerConversation())
 
   // Handlers
