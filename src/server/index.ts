@@ -10,6 +10,7 @@ import type { Env } from './environment.js'
 import type { Bot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { requestLogger } from '#root/server/middlewares/request-logger.js'
+import { prisma } from '#root/prisma/index.js'
 
 export function createServer(bot: Bot) {
   const server = new Hono<Env>()
@@ -44,7 +45,15 @@ export function createServer(bot: Bot) {
     )
   })
 
-  server.get('/', c => c.json({ status: true }))
+  server.get('/weird-healthcheck', (c) => {
+    try {
+      prisma.user.findFirst()
+      return c.text('ok')
+    }
+    catch (e) {
+      return c.text('error', { status: 500 })
+    }
+  })
 
   server.post(
     '/webhook',
