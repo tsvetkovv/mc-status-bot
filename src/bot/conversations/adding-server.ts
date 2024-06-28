@@ -57,7 +57,6 @@ export function addingServerConversation() {
             })
             const isGroup = !!message.chat_shared
             if (isGroup) {
-              await ctx.reply(JSON.stringify(message.chat_shared))
               chatId = message.chat_shared.chat_id
               messageId = (await ctx.api.sendMessage(chatId, msgServerAdded)).message_id
             }
@@ -70,15 +69,23 @@ export function addingServerConversation() {
               // remove all previous liveMessages in the chat
               const liveMessages = await prisma.liveMessage.findMany({
                 where: {
-                  chatWatcherTgChatId: tgChatId,
+                  chatWatcherTgChatId: chatId,
                 },
-              })
-              if (liveMessages.length > 0) {
-                await ctx.api.deleteMessages(tgChatId, liveMessages.map(({ tgMessageId }) => tgMessageId))
+              }).catch(e => logger.info(`Error finding live messages in chat ${chatId}`, e))
+              if (liveMessages?.length) {
+                logger.info(`Deleting ${liveMessages.length} messages in chat ${chatId}`)
+                const del = await ctx.api.deleteMessages(chatId, liveMessages.map(({ tgMessageId }) => tgMessageId)).catch(e => logger.info(`Error deleting messages in chat ${chatId}`, e))
+                if (del) {
+                  await prisma.liveMessage.deleteMany({
+                    where: {
+                      chatWatcherTgChatId: chatId,
+                    },
+                  }).catch(e => logger.info(`Error deleting live messages from DB for chat ${chatId}`, e))
+                }
               }
 
               const data = {
-                tgChatId,
+                tgChatId: chatId,
                 isGroup,
                 liveMessages: {
                   create: {
@@ -101,11 +108,12 @@ export function addingServerConversation() {
                   },
                 },
               } satisfies Prisma.ChatWatcherUpdateInput & Prisma.ChatWatcherCreateInput
+              logger.info(`Creating chat watcher for chat ${chatId}`)
               await prisma.chatWatcher.upsert({
                 where: { tgChatId },
                 create: data,
                 update: data,
-              })
+              }).catch(e => logger.info(`Error creating chat watcher for chat ${chatId}`, e))
             })
 
             return
