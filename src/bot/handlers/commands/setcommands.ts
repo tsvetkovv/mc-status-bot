@@ -1,17 +1,22 @@
-import type { BotCommand } from '@grammyjs/types'
+import type { BotCommand, LanguageCode } from '@grammyjs/types'
 import type { CommandContext } from 'grammy'
 import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { config } from '#root/config.js'
 import type { Context } from '#root/bot/context.js'
 
-function getLanguageCommand(localeCode: string): BotCommand {
+function isValidLanguageCode(_code: string): _code is LanguageCode {
+  // TODO: validate language code
+  return true
+}
+
+function getLanguageCommand(localeCode: LanguageCode): BotCommand {
   return {
     command: 'language',
     description: i18n.t(localeCode, 'language_command.description'),
   }
 }
 
-function getPrivateChatCommands(localeCode: string): BotCommand[] {
+function getPrivateChatCommands(localeCode: LanguageCode): BotCommand[] {
   return [
     {
       command: 'start',
@@ -66,7 +71,7 @@ export async function setCommandsHandler(ctx: CommandContext<Context>) {
   )
 
   if (isMultipleLocales) {
-    const requests = i18n.locales.map(code =>
+    const requests = i18n.locales.filter(isValidLanguageCode).map(code =>
       ctx.api.setMyCommands(
         [
           ...getPrivateChatCommands(code),
@@ -94,7 +99,7 @@ export async function setCommandsHandler(ctx: CommandContext<Context>) {
   })
 
   if (isMultipleLocales) {
-    const requests = i18n.locales.map(code =>
+    const requests = i18n.locales.filter(isValidLanguageCode).map(code =>
       ctx.api.setMyCommands(getGroupChatCommands(code), {
         language_code: code,
         scope: {
