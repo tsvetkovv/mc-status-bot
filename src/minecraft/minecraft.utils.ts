@@ -50,7 +50,8 @@ async function trackPlayerSessions() {
     })))
 
     // Update end time for players who are still online
-    const lastDateToConsiderOnline = subMilliseconds(now, Math.max(pingPollingInterval * 1.5, 30_000))
+    // if a user is not online for more than 3 minutes, consider them offline
+    const lastDateToConsiderOnline = subMilliseconds(now, Math.max(pingPollingInterval * 1.5, 3 * 60_000))
     logger.info(`Minimum time to be updated ${lastDateToConsiderOnline.toISOString()}`)
     const usersToUpdateOnline = {
       serverId: server.id,

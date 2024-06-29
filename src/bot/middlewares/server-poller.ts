@@ -11,10 +11,18 @@ export interface ServerStatus {
   serverId: string
   address: string
   status: OnlineStatus | OfflineStatus
-  players: {
-    name: string
-    lastSeen: Date | null
-  }[]
+  players: (OnlinePlayer | OfflinePlayer)[]
+}
+interface OnlinePlayer {
+  name: string
+  online: true
+  sessionStartTime: Date
+}
+
+interface OfflinePlayer {
+  name: string
+  online: false
+  lastSeen: Date | null
 }
 
 interface OnlineStatus {
@@ -96,17 +104,15 @@ export class ServerPoller {
     const statuses = await Promise.all(
       servers.map(async (server) => {
         const pingResult = await pingServer(server.address)
-        const players = await this.getRecentPlayers(server.id)
+        const onlinePlayerNames = pingResult.offline ? [] : (pingResult.players?.map(p => p.name) || [])
+        const players = await this.getRecentPlayers(server.id, onlinePlayerNames)
         return {
           serverId: server.id,
           address: server.address,
           status: pingResult.offline
             ? { online: false as const }
             : { online: true as const, pingResult },
-          players: players.map(p => ({
-            name: p.name,
-            lastSeen: p.lastSeen,
-          })),
+          players,
         }
       }),
     )
@@ -178,7 +184,7 @@ export class ServerPoller {
     })
   }
 
-  private async getRecentPlayers(serverId: string) {
+  private async getRecentPlayers(serverId: string, onlinePlayerNames: string[]) {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
     const recentSessions = await prisma.playerSession.findMany({
@@ -189,9 +195,10 @@ export class ServerPoller {
           { endTime: null },
         ],
       },
-      orderBy: {
-        endTime: 'desc',
-      },
+      orderBy: [
+        { endTime: 'desc' },
+        { startTime: 'desc' },
+      ],
       select: {
         player: {
           select: {
@@ -199,15 +206,28 @@ export class ServerPoller {
           },
         },
         endTime: true,
+        startTime: true,
       },
       distinct: ['playerId'],
     })
 
-    const players = recentSessions.map(session => ({
-      name: session.player.name,
-      lastSeen: session.endTime,
-    }))
-    return players
+    return recentSessions.map((session) => {
+      const isOnline = onlinePlayerNames.includes(session.player.name)
+      if (isOnline) {
+        return {
+          name: session.player.name,
+          online: true,
+          sessionStartTime: session.startTime,
+        } as OnlinePlayer
+      }
+      else {
+        return {
+          name: session.player.name,
+          online: false,
+          lastSeen: session.endTime,
+        } as OfflinePlayer
+      }
+    })
   }
 
   private formatStatusMessage(status: ServerStatus): string {
@@ -217,12 +237,31 @@ export class ServerPoller {
       ? `${status.address} ${status.status.pingResult.players?.length ?? 0}/${status.status.pingResult.maxPlayers}`
       : `${status.address} Offline`
 
-    const onlinePlayers = status.status.online
-      ? status.status.pingResult.players?.map(player => `🟢 ${player.name}`).join('\n') || ''
-      : ''
+    const formatDuration = (duration: number) => {
+      // Fallback to custom implementation
+      const hours = Math.floor(duration / 3600000)
+      const minutes = Math.floor((duration % 3600000) / 60000)
+      if (hours === 0) {
+        return `${minutes}m`
+      }
+      else {
+        return `${hours}h ${minutes}m`
+      }
+    }
+
+    const onlinePlayers = status.players
+      .filter((player): player is OnlinePlayer => player.online)
+      .sort((a, b) => {
+        return b.sessionStartTime.getTime() - a.sessionStartTime.getTime()
+      })
+      .map((player) => {
+        const sessionDuration = formatDuration(Date.now() - player.sessionStartTime.getTime())
+        return `🟢 ${player.name} for ${sessionDuration}`
+      })
+      .join('\n')
 
     const offlinePlayers = status.players
-      .filter(player => !status.status.online || !status.status.pingResult.players?.some(p => p.name === player.name))
+      .filter((player): player is OfflinePlayer => !player.online)
       .sort((a, b) => {
         if (a.lastSeen && b.lastSeen)
           return b.lastSeen.getTime() - a.lastSeen.getTime()
@@ -234,7 +273,7 @@ export class ServerPoller {
       })
       .map((player) => {
         if (!player.lastSeen)
-          return `⚪️ ${player.name}` // Handle null lastSeen
+          return `⚪️ ${player.name}`
 
         const timeDiff = Date.now() - player.lastSeen.getTime()
         const minutes = Math.floor(timeDiff / 60000)
@@ -261,7 +300,6 @@ export class ServerPoller {
 
     const playerList = [onlinePlayers, offlinePlayers].filter(Boolean).join('\n')
 
-    // show current time with hours, minutes, seconds
     const currentTime = new Date().toLocaleTimeString('de', { timeZone: 'Europe/Berlin' })
     return `
 ${header}
