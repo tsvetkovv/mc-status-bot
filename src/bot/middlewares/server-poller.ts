@@ -238,30 +238,32 @@ export class ServerPoller {
       : `${status.address} Offline`
 
     const formatDuration = (duration: number) => {
-      // Fallback to custom implementation
       const hours = Math.floor(duration / 3600000)
       const minutes = Math.floor((duration % 3600000) / 60000)
-      if (hours === 0) {
-        return `${minutes}m`
+      if (duration < 60000) {
+        return 'just joined'
+      }
+      else if (hours === 0) {
+        return `for ${minutes}m`
       }
       else {
-        return `${hours}h ${minutes}m`
+        return `for ${hours}h ${minutes}m`
       }
     }
 
     const onlinePlayers = status.players
-      .filter((player): player is OnlinePlayer => player.online)
+      .filter(player => player.online)
       .sort((a, b) => {
         return b.sessionStartTime.getTime() - a.sessionStartTime.getTime()
       })
       .map((player) => {
         const sessionDuration = formatDuration(Date.now() - player.sessionStartTime.getTime())
-        return `🟢 ${player.name} for ${sessionDuration}`
+        return `🟢 ${player.name} ${sessionDuration}`
       })
       .join('\n')
 
     const offlinePlayers = status.players
-      .filter((player): player is OfflinePlayer => !player.online)
+      .filter(player => !player.online)
       .sort((a, b) => {
         if (a.lastSeen && b.lastSeen)
           return b.lastSeen.getTime() - a.lastSeen.getTime()
