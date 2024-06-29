@@ -60,7 +60,7 @@ export class ServerPoller {
 
     this.scheduleNextPoll()
 
-    logger.info(`Server polling started with interval of ${this.config.intervalMs}ms`)
+    logger.info(`Server polling started with interval of ${this.config.intervalMs} ms`)
   }
 
   private scheduleNextPoll() {
@@ -75,9 +75,8 @@ export class ServerPoller {
       }
       finally {
         const endTime = performance.now()
-        const executionTime = endTime - startTime
 
-        logger.info(`Chat updating completed in ${executionTime.toFixed(2)} ms`)
+        logger.info({ msg: `Chat updating completed`, elapsed: endTime - startTime })
 
         this.scheduleNextPoll() // Schedule the next poll after completion
       }
@@ -212,8 +211,10 @@ export class ServerPoller {
   }
 
   private formatStatusMessage(status: ServerStatus): string {
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto', localeMatcher: 'best fit', style: 'narrow' })
+
     const header = status.status.online
-      ? `${status.address} ${status.status.pingResult.players?.length}/${status.status.pingResult.maxPlayers}`
+      ? `${status.address} ${status.status.pingResult.players?.length ?? 0}/${status.status.pingResult.maxPlayers}`
       : `${status.address} Offline`
 
     const onlinePlayers = status.status.online
@@ -236,11 +237,24 @@ export class ServerPoller {
           return `⚪️ ${player.name}` // Handle null lastSeen
 
         const timeDiff = Date.now() - player.lastSeen.getTime()
-        let timeAgo = 'less than a minute ago'
-        if (timeDiff > 60000 && timeDiff < 3600000)
-          timeAgo = `${Math.floor(timeDiff / 60000)} minutes ago`
-        if (timeDiff >= 3600000)
-          timeAgo = `${Math.floor(timeDiff / 3600000)} hours ago`
+        const minutes = Math.floor(timeDiff / 60000)
+        const hours = Math.floor(minutes / 60)
+        const days = Math.floor(hours / 24)
+
+        let timeAgo
+        if (days > 0) {
+          timeAgo = rtf.format(-days, 'day')
+        }
+        else if (hours > 0) {
+          timeAgo = rtf.format(-hours, 'hour')
+        }
+        else if (minutes > 0) {
+          timeAgo = rtf.format(-minutes, 'minute')
+        }
+        else {
+          timeAgo = 'just now'
+        }
+
         return `⚪️ ${player.name} ~ ${timeAgo}`
       })
       .join('\n')
@@ -248,13 +262,13 @@ export class ServerPoller {
     const playerList = [onlinePlayers, offlinePlayers].filter(Boolean).join('\n')
 
     // show current time with hours, minutes, seconds
-    const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false })
+    const currentTime = new Date().toLocaleTimeString('de', { timeZone: 'Europe/Berlin' })
     return `
 ${header}
 
 ${playerList}
-    
-Updated at ${currentTime}`
+  
+Updated at ${currentTime} (CET)`
   }
 
   private async getActiveServers() {
@@ -269,7 +283,7 @@ Updated at ${currentTime}`
       where: { id: serverId },
       data: { isPollingEnabled: true },
     })
-    logger.info(`Server ${serverId} enabled for polling`)
+    logger.info({ msg: `Server ${serverId} enabled for polling`, serverId })
   }
 
   async disableServer(serverId: string) {
@@ -277,7 +291,7 @@ Updated at ${currentTime}`
       where: { id: serverId },
       data: { isPollingEnabled: false },
     })
-    logger.info(`Server ${serverId} disabled for polling`)
+    logger.info({ msg: `Server ${serverId} disabled for polling`, serverId })
   }
 
   middleware(): MiddlewareFn<Context & ServerPollerFlavor> {

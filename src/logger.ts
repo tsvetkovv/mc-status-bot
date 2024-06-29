@@ -16,12 +16,23 @@ export const logger = pino({
                 translateTime: true,
               },
             },
+            {
+              target: 'pino/file',
+              level: config.LOG_LEVEL,
+              options: {
+                destination: 'logs/logs.log',
+                mkdir: true,
+              },
+            },
           ]
         : [
             {
               target: 'pino/file',
               level: config.LOG_LEVEL,
-              options: {},
+              options: {
+                destination: 'logs/logs.log',
+                mkdir: true,
+              },
             },
           ]),
     ],

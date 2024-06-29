@@ -1,10 +1,9 @@
-import mc from 'minecraft-protocol'
-
 import {
   subMilliseconds,
 } from 'date-fns'
 import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
+import { pingServer } from '#root/minecraft/pingService.js'
 
 const pingPollingInterval = 5_000
 
@@ -17,85 +16,6 @@ export interface CommonPingResult {
   latency?: number
   favicon?: string
   players?: { uuid: string, name: string } []
-}
-
-function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>): CommonPingResult {
-  if ('maxPlayers' in result) {
-    // It's an OldPingResult
-    return {
-      maxPlayers: result.maxPlayers,
-      playerCount: result.playerCount,
-      motd: result.motd,
-      protocol: result.protocol,
-      version: result.version,
-    }
-  }
-  else {
-    // It's a NewPingResult
-    return {
-      players: result.players.sample?.map(({ name, id }) => ({ name, uuid: id })),
-      maxPlayers: result.players.max,
-      playerCount: result.players.online,
-      motd: typeof result.description === 'string' ? result.description : result.description.text || '',
-      protocol: result.version.protocol,
-      version: result.version.name,
-      latency: result.latency,
-      favicon: result.favicon,
-    }
-  }
-}
-
-export async function pingServer(address: string) {
-  const [host, rawPort] = address.split(':')
-
-  const port = rawPort && Number.parseInt(rawPort) > 0 ? Number.parseInt(rawPort) : undefined
-
-  try {
-    const pingResponse = await mc.ping({
-      host,
-      port,
-      noPongTimeout: 1000,
-    })
-
-    return { ...toCommonPingResult(pingResponse), host, port, offline: false } as const
-  }
-  catch (error) {
-    logger.info('Ping failed', address, error)
-    return { host, port, offline: true } as const
-  }
-}
-
-export async function addServer(address: string) {
-  logger.info(`Adding server: ${address}`)
-
-  const serverAddedAlready = await prisma.server.findUnique({
-    select: {
-      id: true,
-    },
-    where: {
-      address,
-    },
-  })
-  if (serverAddedAlready !== null) {
-    return true
-  }
-
-  const pingResponse = await pingServer(address)
-  logger.info(`Pinged`, pingResponse)
-  if (pingResponse && !pingResponse.offline) {
-    try {
-      await prisma.server.create({
-        data: {
-          address,
-        },
-      })
-      return true
-    }
-    catch (e) {
-      return false
-    }
-  }
-  return false
 }
 
 // Function to track player sessions
@@ -182,9 +102,8 @@ export function startServerPolling() {
     await trackPlayerSessions()
 
     const endTime = performance.now()
-    const executionTime = endTime - startTime
 
-    logger.info(`Server polling completed in: ${executionTime.toFixed(2)} ms`)
+    logger.info({ msg: `Server polling completed`, elapsed: endTime - startTime })
 
     setTimeout(scheduleTrackPlayerSessions, pingPollingInterval)
   }

@@ -1,6 +1,8 @@
-#!/bin/sh -ex
+#!/bin/bash
+set -e
 
-echo "$DATABASE_PATH"
+# Start cron
+service cron start
 
 if [ ! -d "/sqlite/data" ]; then
   mkdir -p /sqlite/data

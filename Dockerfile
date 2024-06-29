@@ -5,7 +5,24 @@ FROM node:20-bookworm-slim as base
 ENV NODE_ENV production
 
 # Install openssl for Prisma
-RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates python3 python3-pip curl wget
+RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates python3 python3-pip curl wget logrotate cron
+
+# Create logrotate configuration
+RUN mkdir -p /etc/logrotate.d
+RUN echo "/myapp/logs/logs.log {\n\
+    su root root\n\
+    daily\n\
+    rotate 7\n\
+    delaycompress\n\
+    compress\n\
+    notifempty\n\
+    missingok\n\
+    copytruncate\n\
+}" > /etc/logrotate.d/myapp
+
+# Add cron job to run logrotate daily
+RUN echo "0 0 * * * /usr/sbin/logrotate /etc/logrotate.conf" | crontab -
+
 
 # Install all node_modules, including dev dependencies
 FROM base as deps

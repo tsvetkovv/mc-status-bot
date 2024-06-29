@@ -3,7 +3,7 @@ import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
 
 export async function addServer(address: string) {
-  logger.info(`Adding server: ${address}`)
+  logger.info({ msg: `Adding server`, server: address })
 
   const serverAddedAlready = await prisma.server.findUnique({
     select: {
@@ -18,7 +18,7 @@ export async function addServer(address: string) {
   }
 
   const pingResponse = await pingServer(address)
-  logger.info('Pinged', pingResponse)
+  logger.info({ msg: 'Pinged', pingResponse, server: address })
   if (pingResponse && !pingResponse.offline) {
     try {
       return await prisma.server.create({
