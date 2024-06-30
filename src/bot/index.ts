@@ -1,6 +1,7 @@
 import { autoChatAction } from '@grammyjs/auto-chat-action'
 import { hydrate } from '@grammyjs/hydrate'
 import { hydrateReply, parseMode } from '@grammyjs/parse-mode'
+import { autoRetry } from '@grammyjs/auto-retry'
 import type { BotConfig, StorageAdapter } from 'grammy'
 import { Bot as TelegramBot, session } from 'grammy'
 import { conversations } from '@grammyjs/conversations'
@@ -45,6 +46,7 @@ export function createBot(token: string, options: Options) {
 
   // Middlewares
   bot.api.config.use(parseMode('HTML'))
+  bot.api.config.use(autoRetry())
 
   if (config.isDev)
     protectedBot.use(updateLogger())
