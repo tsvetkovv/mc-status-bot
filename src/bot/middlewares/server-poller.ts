@@ -130,8 +130,10 @@ export class ServerPoller {
           await this.bot.api.editMessageText(chatId, messageId, text)
         }
         catch (error) {
-          await this.bot.api.deleteMessage(chatId, messageId).catch(e => logger.info(`Error deleting message ${messageId} in chat ${liveMsg.chatWatcherTgChatId}`, e))
-          const newMsg = await this.bot.api.sendMessage(chatId, text).catch(async () => {
+          logger.info({ msg: `Error editing message ${messageId} ${text} in chat ${liveMsg.chatWatcherTgChatId}`, err: error })
+          await this.bot.api.deleteMessage(chatId, messageId).catch(err => logger.info({ msg: `Error deleting message ${messageId} in chat ${liveMsg.chatWatcherTgChatId}`, err }))
+          const newMsg = await this.bot.api.sendMessage(chatId, text).catch(async (err) => {
+            logger.info({ msg: `Error sending message ${text} in chat ${liveMsg.chatWatcherTgChatId}`, err })
             // remove the message from the database
             logger.info(`Deleting chat ${liveMsg.chatWatcherTgChatId} and it's messages from chat from DB `)
             await prisma.chatWatcher.delete({
@@ -141,10 +143,9 @@ export class ServerPoller {
             })
           })
           if (!newMsg) {
-            logger.info(`Error sending message ${text} in chat ${liveMsg.chatWatcherTgChatId}`)
             continue
           }
-          await this.bot.api.pinChatMessage(chatId, newMsg.message_id).catch(e => logger.info(`Error pinning message ${newMsg.message_id} in chat ${liveMsg.chatWatcherTgChatId}`, e))
+          await this.bot.api.pinChatMessage(chatId, newMsg.message_id).catch(err => logger.info(`Error pinning message ${newMsg.message_id} in chat ${liveMsg.chatWatcherTgChatId}`, err))
           // add this message to the database
           await prisma.liveMessage.create({
             select: {

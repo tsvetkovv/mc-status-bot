@@ -30,7 +30,7 @@ export function addingServerConversation() {
             return addServer(proposedServer)
           })
 
-          logger.info(`Response for ${proposedServer} : ${response}`)
+          logger.info({ msg: `Response for ${proposedServer}`, response })
           if (response) {
             const tgChatId = ctx.chatId
             const fromId = ctx.from?.id
@@ -71,7 +71,7 @@ export function addingServerConversation() {
                 where: {
                   chatWatcherTgChatId: chatId,
                 },
-              }).catch(e => logger.info(`Error finding live messages in chat ${chatId}`, e))
+              }).catch(err => logger.info({ msg: `Error finding live messages in chat ${chatId}`, err }))
               if (liveMessages?.length) {
                 logger.info(`Deleting ${liveMessages.length} messages in chat ${chatId}`)
                 const del = await ctx.api.deleteMessages(chatId, liveMessages.map(({ tgMessageId }) => tgMessageId)).catch(e => logger.info(`Error deleting messages in chat ${chatId}`, e))
@@ -83,6 +83,8 @@ export function addingServerConversation() {
                   }).catch(e => logger.info(`Error deleting live messages from DB for chat ${chatId}`, e))
                 }
               }
+
+              await ctx.api.pinChatMessage(chatId, messageId).catch(err => logger.info(`Error pinning message ${messageId} in chat ${chatId}`, err))
 
               const data = {
                 tgChatId: chatId,
