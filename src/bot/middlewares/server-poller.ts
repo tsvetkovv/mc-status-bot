@@ -132,6 +132,14 @@ export class ServerPoller {
         catch (error) {
           logger.info({ msg: `Error editing message ${messageId} ${text} in chat ${liveMsg.chatWatcherTgChatId}`, err: error })
           await this.bot.api.deleteMessage(chatId, messageId).catch(err => logger.info({ msg: `Error deleting message ${messageId} in chat ${liveMsg.chatWatcherTgChatId}`, err }))
+          await prisma.liveMessage.delete({
+            where: {
+              tgMessageId_chatWatcherTgChatId: {
+                chatWatcherTgChatId: liveMsg.chatWatcherTgChatId,
+                tgMessageId: messageId,
+              },
+            },
+          }).catch(err => logger.info({ msg: `Error deleting message ${messageId} in chat ${liveMsg.chatWatcherTgChatId} from DB`, err }))
           const newMsg = await this.bot.api.sendMessage(chatId, text).catch(async (err) => {
             logger.info({ msg: `Error sending message ${text} in chat ${liveMsg.chatWatcherTgChatId}`, err })
             // remove the message from the database
