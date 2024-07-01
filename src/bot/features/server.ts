@@ -1,4 +1,4 @@
-import { Composer, Keyboard } from 'grammy'
+import { Composer } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { CONV_ADDING_SERVER } from '#root/bot/conversations/index.js'
@@ -32,89 +32,58 @@ adminFeature
     await ctx.reply(msg)
   })
 
+adminFeature
+  .command('livemessages', logHandle('command-livemessages'), async (ctx) => {
+    const allLiveMessages = await ctx.prisma.liveMessage.findMany({
+      select: {
+        chatWatcherTgChatId: true,
+        tgMessageId: true,
+        id: true,
+      },
+    })
+
+    const msg = allLiveMessages
+      .map(({ chatWatcherTgChatId, tgMessageId, id }) => `- chat: ${chatWatcherTgChatId} msg: ${tgMessageId} \n /remove_livemessage_${id}`)
+      .join('\n')
+    if (!msg) {
+      return ctx.reply('No messages found')
+    }
+    await ctx.reply(msg)
+  })
+
 adminFeature.command('startpolling', logHandle('command-startpolling'), async (ctx) => {
   ctx.serverPoller.start()
 })
 adminFeature.command('stoppolling', async (ctx) => {
   await ctx.reply('Server polling stopped.')
 })
-adminFeature.command('choosegroup', logHandle('command-choosegroup'), async (ctx) => {
-  const keyboard = new Keyboard().requestChat('Choose a group', 0, {
-    bot_is_member: true,
-    chat_is_channel: false,
-    request_title: true,
-    user_administrator_rights: {
-      can_pin_messages: true,
-      can_edit_messages: true,
-      can_delete_messages: true,
-      is_anonymous: false,
-      can_manage_chat: false,
-      can_manage_video_chats: false,
-      can_restrict_members: false,
-      can_promote_members: false,
-      can_change_info: false,
-      can_invite_users: false,
-      can_post_stories: false,
-      can_edit_stories: false,
-      can_delete_stories: false,
-    },
-    bot_administrator_rights: {
-      can_pin_messages: true,
-      can_edit_messages: true,
-      can_delete_messages: true,
-      is_anonymous: false,
-      can_manage_chat: false,
-      can_manage_video_chats: false,
-      can_restrict_members: false,
-      can_promote_members: false,
-      can_change_info: false,
-      can_invite_users: false,
-      can_post_stories: false,
-      can_edit_stories: false,
-      can_delete_stories: false,
-    },
-  }).row().text('Just this chat')
-  await ctx.reply('Choose a group', {
-    reply_markup: keyboard,
-  })
-})
 
-feature.on('msg:chat_shared', logHandle('msg:chat_shared'), async (ctx) => {
-  await ctx.reply(JSON.stringify(ctx.message.chat_shared), {
-    reply_markup: {
-      remove_keyboard: true,
-    },
-  })
-})
-
-feature.hears(/\/remove_(.+)/, logHandle('command-remove'), async (ctx) => {
+feature.hears(/\/remove_livemessage_(.+)/, logHandle('command-remove_livemessage_'), async (ctx) => {
   const idToRemove = ctx.match[1]
 
   if (idToRemove) {
-    const server = await ctx.prisma.server.findFirst({
+    const msg = await ctx.prisma.liveMessage.findFirst({
       where: {
         id: idToRemove,
       },
     })
-    if (server) {
-      await ctx.reply(`Are you sure you want to remove ${server.address}? /confirm_removal_${idToRemove}`)
+    if (msg) {
+      await ctx.reply(`Are you sure you want to remove live message ${msg.tgMessageId} in chat ${msg.chatWatcherTgChatId}? /confirm_remove_livemessage_${idToRemove}`)
     }
   }
 })
-feature.hears(/\/confirm_removal_(.+)/, logHandle('command-remove'), async (ctx) => {
+feature.hears(/\/confirm_remove_livemessage_(.+)/, logHandle('command-confirm_remove_livemessage_'), async (ctx) => {
   const idToRemove = ctx.match[1]
   if (idToRemove) {
-    const server = await ctx.prisma.server.delete({
+    const liveMessage = await ctx.prisma.liveMessage.delete({
       where: {
         id: idToRemove,
       },
     })
-    if (server) {
-      await ctx.reply(`Successfully removed ${server.address}`)
+    if (liveMessage) {
+      await ctx.reply(`Successfully removed `)
     }
   }
 })
-
-feature.callbackQuery('gr')
 
 export { composer as addServerFeature }

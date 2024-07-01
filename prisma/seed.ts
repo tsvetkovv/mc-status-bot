@@ -3,20 +3,18 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  const server = {
-    host: 'france.mysh.dev',
-    port: 25566,
-  }
+  const server = 'france.mysh.dev:25566'
 
   await prisma.server.upsert({
     where: {
-      host_port: {
-        host: server.host,
-        port: server.port,
-      },
+      address: server,
     },
-    create: server,
-    update: server,
+    create: {
+      address: server,
+    },
+    update: {
+      address: server,
+    },
   })
 }
 
