@@ -10,6 +10,8 @@ removeserver_command =
     .description = Remove the history and stop pinging the server
 listservers_command =
     .description = See all servers
+livemessages_command =
+    .description = See all live messages
 
 chats_command =
     .description = See chats with live messages
