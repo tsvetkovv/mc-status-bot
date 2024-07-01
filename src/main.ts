@@ -60,7 +60,7 @@ async function startWebhook() {
   })
 
   // connect to database
-  await prisma.$connect().catch(err => logger.error({ msg: 'error connecting to database', err }))
+  await prisma.$connect()
 
   // clean up a database
   await prisma.session.deleteMany()
@@ -87,6 +87,8 @@ async function startWebhook() {
   await bot.api.setWebhook(config.BOT_WEBHOOK, {
     allowed_updates: config.BOT_ALLOWED_UPDATES,
     secret_token: config.BOT_WEBHOOK_SECRET,
+    drop_pending_updates: true,
+    max_connections: 1,
   })
   logger.info({
     msg: 'Webhook was set',

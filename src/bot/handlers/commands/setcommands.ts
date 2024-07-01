@@ -26,6 +26,15 @@ function getPrivateChatCommands(localeCode: LanguageCode): BotCommand[] {
       command: 'addserver',
       description: i18n.t(localeCode, 'addserver_command.description'),
     },
+  ]
+}
+
+function getPrivateChatAdminCommands(localeCode: string): BotCommand[] {
+  return [
+    {
+      command: 'setcommands',
+      description: i18n.t(localeCode, 'setcommands_command.description'),
+    },
     {
       command: 'removeserver',
       description: i18n.t(localeCode, 'removeserver_command.description'),
@@ -37,15 +46,6 @@ function getPrivateChatCommands(localeCode: LanguageCode): BotCommand[] {
     {
       command: 'livemessages',
       description: i18n.t(localeCode, 'livemessages_command.description'),
-    },
-  ]
-}
-
-function getPrivateChatAdminCommands(localeCode: string): BotCommand[] {
-  return [
-    {
-      command: 'setcommands',
-      description: i18n.t(localeCode, 'setcommands_command.description'),
     },
   ]
 }
