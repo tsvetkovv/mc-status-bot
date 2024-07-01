@@ -45,9 +45,9 @@ export function createServer(bot: Bot) {
     )
   })
 
-  server.get('/weird-healthcheck', (c) => {
+  server.get('/weird-healthcheck', async (c) => {
     try {
-      prisma.user.findFirst()
+      await prisma.user.findFirst()
       return c.text('ok')
     }
     catch (e) {

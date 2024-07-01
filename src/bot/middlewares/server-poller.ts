@@ -93,7 +93,7 @@ export class ServerPoller {
 
   stop() {
     if (this.pollingTimeoutId) {
-      clearInterval(this.pollingTimeoutId)
+      clearTimeout(this.pollingTimeoutId)
       this.pollingTimeoutId = null
       logger.info('Server polling stopped')
     }
