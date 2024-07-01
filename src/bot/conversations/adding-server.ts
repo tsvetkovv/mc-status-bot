@@ -74,56 +74,47 @@ export function addingServerConversation() {
               }).catch(err => logger.info({ msg: `Error finding live messages in chat ${chatId}`, err }))
               if (liveMessages?.length) {
                 logger.info(`Deleting ${liveMessages.length} messages in chat ${chatId}`)
-                const del = await ctx.api.deleteMessages(chatId, liveMessages.map(({ tgMessageId }) => tgMessageId)).catch(e => logger.info(`Error deleting messages in chat ${chatId}`, e))
-                if (del) {
-                  await prisma.liveMessage.deleteMany({
-                    where: {
-                      chatWatcherTgChatId: chatId,
-                    },
-                  }).catch(e => logger.info(`Error deleting live messages from DB for chat ${chatId}`, e))
-                }
+                await ctx.api.deleteMessages(chatId, liveMessages.map(({ tgMessageId }) => tgMessageId)).catch(e => logger.info(`Error deleting messages in chat ${chatId}`, e))
+                await prisma.liveMessage.deleteMany({
+                  where: {
+                    chatWatcherTgChatId: chatId,
+                  },
+                }).catch(e => logger.info(`Error deleting live messages from DB for chat ${chatId}`, e))
               }
 
               await ctx.api.pinChatMessage(chatId, messageId).catch(err => logger.info(`Error pinning message ${messageId} in chat ${chatId}`, err))
-
               const data = {
-                tgChatId: chatId,
-                isGroup,
-                liveMessages: {
+                tgMessageId: messageId,
+                chatWatcher: {
                   connectOrCreate: {
-                    where: {
-                      tgMessageId_chatWatcherTgChatId: {
-                        tgMessageId: messageId,
-                        chatWatcherTgChatId: chatId,
-                      },
-                    },
+                    where: { tgChatId: chatId },
                     create: {
-                      tgMessageId: messageId,
-                      server: {
-                        connect: {
-                          id: response.id,
-                        },
-                      },
-                      addedBy: {
-                        connectOrCreate: {
-                          where: {
-                            telegramId: fromId,
-                          },
-                          create: {
-                            telegramId: fromId,
-                          },
-                        },
-                      },
+                      tgChatId: chatId,
+                      isGroup,
                     },
                   },
                 },
-              } satisfies Prisma.ChatWatcherUpdateInput & Prisma.ChatWatcherCreateInput
-              logger.info(`Creating chat watcher for chat ${chatId}`)
-              await prisma.chatWatcher.upsert({
-                where: { tgChatId },
-                create: data,
-                update: data,
-              }).catch(e => logger.info(`Error creating chat watcher for chat ${chatId}`, e))
+                server: {
+                  connect: {
+                    id: response.id,
+                  },
+                },
+                addedBy: {
+                  connectOrCreate: {
+                    where: {
+                      telegramId: fromId,
+                    },
+                    create: {
+                      telegramId: fromId,
+                    },
+                  },
+                },
+              } satisfies Prisma.LiveMessageCreateInput
+
+              logger.info(`Creating live message for chat ${chatId}`)
+              await prisma.liveMessage.create({
+                data,
+              }).catch(e => logger.info(`Error creating live message for chat ${chatId}`, e))
             })
 
             return
