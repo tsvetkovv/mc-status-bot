@@ -90,20 +90,28 @@ export function addingServerConversation() {
                 tgChatId: chatId,
                 isGroup,
                 liveMessages: {
-                  create: {
-                    tgMessageId: messageId,
-                    server: {
-                      connect: {
-                        id: response.id,
+                  connectOrCreate: {
+                    where: {
+                      tgMessageId_chatWatcherTgChatId: {
+                        tgMessageId: messageId,
+                        chatWatcherTgChatId: chatId,
                       },
                     },
-                    addedBy: {
-                      connectOrCreate: {
-                        where: {
-                          telegramId: fromId,
+                    create: {
+                      tgMessageId: messageId,
+                      server: {
+                        connect: {
+                          id: response.id,
                         },
-                        create: {
-                          telegramId: fromId,
+                      },
+                      addedBy: {
+                        connectOrCreate: {
+                          where: {
+                            telegramId: fromId,
+                          },
+                          create: {
+                            telegramId: fromId,
+                          },
                         },
                       },
                     },
