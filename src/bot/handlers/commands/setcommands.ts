@@ -35,8 +35,8 @@ function getPrivateChatCommands(localeCode: LanguageCode): BotCommand[] {
       description: i18n.t(localeCode, 'listservers_command.description'),
     },
     {
-      command: 'livemessages',
-      description: i18n.t(localeCode, 'livemessages_command.description'),
+      command: 'chats',
+      description: i18n.t(localeCode, 'chats_command.description'),
     },
   ]
 }
