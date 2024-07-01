@@ -60,7 +60,12 @@ async function startWebhook() {
   })
 
   // connect to database
-  await prisma.$connect()
+  await prisma.$connect().catch(err => logger.error({ msg: 'error connecting to database', err }))
+
+  // clean up a database
+  await prisma.session.deleteMany()
+  await prisma.liveMessage.deleteMany()
+  await prisma.chatWatcher.deleteMany()
 
   // to prevent receiving updates before the bot is ready
   await bot.init()
