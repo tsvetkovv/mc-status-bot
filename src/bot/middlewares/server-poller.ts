@@ -127,7 +127,9 @@ export class ServerPoller {
         const text = this.formatStatusMessage(status)
         const chatId = liveMsg.chatWatcherTgChatId.toString()
         try {
+          logger.debug({ msg: `Sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${messageId}` })
           await this.bot.api.editMessageText(chatId, messageId, text)
+          logger.debug({ msg: `Sent status update to chat ${liveMsg.chatWatcherTgChatId} msg ${messageId}` })
         }
         catch (error) {
           logger.info({ msg: `Error editing message ${messageId} ${text} in chat ${liveMsg.chatWatcherTgChatId}`, err: error })

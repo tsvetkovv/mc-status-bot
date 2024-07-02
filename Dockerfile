@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y fuse3 openssl sqlite3 ca-certificates p
 
 # Create logrotate configuration
 RUN mkdir -p /etc/logrotate.d
-RUN echo "/myapp/logs/logs.log {\n\
+RUN echo "/myapp/logs/*.log {\n\
     su root root\n\
     daily\n\
     rotate 7\n\
