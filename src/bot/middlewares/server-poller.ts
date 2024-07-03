@@ -54,7 +54,7 @@ export class ServerPoller {
   private bot: Bot
 
   constructor(bot: Bot, config: ServerPollerConfig = {}) {
-    this.config = { intervalMs: 5000, ...config }
+    this.config = { intervalMs: 60_000, ...config }
     this.bot = bot
     this.start()
     startServerPolling()
