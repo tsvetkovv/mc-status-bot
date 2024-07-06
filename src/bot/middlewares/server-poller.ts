@@ -6,6 +6,10 @@ import type { CommonPingResult } from '#root/minecraft/pingService.js'
 import { pingServer } from '#root/minecraft/pingService.js'
 import type { Bot } from '#root/bot/index.js'
 import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
+import { config } from '#root/config.js'
+import { getLiveMessageText } from '#root/bot/helpers/live-messages-formatters.js'
+
+const intervalMs = config.CHAT_UPDATE_INTERVAL
 
 export interface ServerStatus {
   serverId: string
@@ -13,13 +17,13 @@ export interface ServerStatus {
   status: OnlineStatus | OfflineStatus
   players: (OnlinePlayer | OfflinePlayer)[]
 }
-interface OnlinePlayer {
+export interface OnlinePlayer {
   name: string
   online: true
   sessionStartTime: Date
 }
 
-interface OfflinePlayer {
+export interface OfflinePlayer {
   name: string
   online: false
   lastSeen: Date | null
@@ -54,7 +58,7 @@ export class ServerPoller {
   private bot: Bot
 
   constructor(bot: Bot, config: ServerPollerConfig = {}) {
-    this.config = { intervalMs: 60_000, ...config }
+    this.config = { intervalMs, ...config }
     this.bot = bot
     this.start()
     startServerPolling()
@@ -124,7 +128,7 @@ export class ServerPoller {
       for (const liveMsg of subscribedChats) {
         const messageId = liveMsg.tgMessageId
         logger.debug(`Sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${messageId}`)
-        const text = this.formatStatusMessage(status)
+        const text = getLiveMessageText(status)
         const chatId = liveMsg.chatWatcherTgChatId.toString()
         try {
           logger.debug({ msg: `Sending status update to chat ${liveMsg.chatWatcherTgChatId} msg ${messageId}` })
@@ -239,87 +243,6 @@ export class ServerPoller {
         } as OfflinePlayer
       }
     })
-  }
-
-  private formatStatusMessage(status: ServerStatus): string {
-    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto', localeMatcher: 'best fit', style: 'narrow' })
-
-    const header = status.status.online
-      ? `${status.address} ${status.status.pingResult.players?.length ?? 0}/${status.status.pingResult.maxPlayers}`
-      : `${status.address} Offline`
-
-    const formatDuration = (duration: number) => {
-      const hours = Math.floor(duration / 3600000)
-      const minutes = Math.floor((duration % 3600000) / 60000)
-      if (duration < 60000) {
-        return 'just joined'
-      }
-      else if (hours === 0) {
-        return `for ${minutes}m`
-      }
-      else {
-        return `for ${hours}h ${minutes}m`
-      }
-    }
-
-    const onlinePlayers = status.players
-      .filter(player => player.online)
-      .sort((a, b) => {
-        return b.sessionStartTime.getTime() - a.sessionStartTime.getTime()
-      })
-      .map((player) => {
-        const sessionDuration = formatDuration(Date.now() - player.sessionStartTime.getTime())
-        return `🟢 ${player.name} ${sessionDuration}`
-      })
-      .join('\n')
-
-    const offlinePlayers = status.players
-      .filter(player => !player.online)
-      .sort((a, b) => {
-        if (a.lastSeen && b.lastSeen)
-          return b.lastSeen.getTime() - a.lastSeen.getTime()
-        if (a.lastSeen)
-          return -1
-        if (b.lastSeen)
-          return 1
-        return 0
-      })
-      .map((player) => {
-        if (!player.lastSeen)
-          return `⚪️ ${player.name}`
-
-        const timeDiff = Date.now() - player.lastSeen.getTime()
-        const minutes = Math.floor(timeDiff / 60000)
-        const hours = Math.floor(minutes / 60)
-        const days = Math.floor(hours / 24)
-
-        let timeAgo
-        if (days > 0) {
-          timeAgo = rtf.format(-days, 'day')
-        }
-        else if (hours > 0) {
-          timeAgo = rtf.format(-hours, 'hour')
-        }
-        else if (minutes > 0) {
-          timeAgo = rtf.format(-minutes, 'minute')
-        }
-        else {
-          timeAgo = 'just now'
-        }
-
-        return `⚪️ ${player.name} ~ ${timeAgo}`
-      })
-      .join('\n')
-
-    const playerList = [onlinePlayers, offlinePlayers].filter(Boolean).join('\n')
-
-    const currentTime = new Date().toLocaleTimeString('de', { timeZone: 'Europe/Berlin' })
-    return `
-${header}
-
-${playerList}
-  
-Updated at ${currentTime} (CET)`
   }
 
   private async getActiveServers() {
