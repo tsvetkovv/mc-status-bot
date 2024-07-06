@@ -28,6 +28,7 @@ const requiredGroupPermissions = {
 const requiredChannelPermissions = {
   ...requiredGroupPermissions,
   can_post_messages: true,
+  can_edit_messages: true, // required for pinning messages
 } satisfies ChatAdministratorRights
 
 export const selectChatKeyboard = new Keyboard()
