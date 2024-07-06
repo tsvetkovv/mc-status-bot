@@ -16,7 +16,7 @@ livemessages_command =
 chats_command =
     .description = See chats with live messages
 
-welcome = Welcome!
+welcome = Welcome. Use /addserver to add a server to watch
 language = 
     .select = Please, select your language
     .changed = Language successfully changed!
