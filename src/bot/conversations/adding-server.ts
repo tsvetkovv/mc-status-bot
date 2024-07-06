@@ -39,23 +39,32 @@ async function handleAddingServerConversation({ ctx, conversation, proposedServe
     const { message } = await conversation.waitFor(['message:chat_shared', 'message:text'])
     let chatId: number
     let messageId: number
-    const msgServerAdded = `The server <code>${proposedServer}</code> has been added`
+    const initMessage = `Gathering info about <code>${proposedServer}</code>...`
 
     const isGroup = !!message.chat_shared
     if (isGroup) {
       chatId = message.chat_shared.chat_id
-      messageId = (await ctx.api.sendMessage(chatId, msgServerAdded)).message_id
+      messageId = (await ctx.api.sendMessage(chatId, initMessage)).message_id
+      await ctx.reply(`The server <code>${proposedServer}</code> has been added`, {
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      })
     }
-    const msgServerAddedPrivate = await ctx.reply(msgServerAdded, {
-      reply_markup: {
-        remove_keyboard: true,
-      },
-    })
-    if (!isGroup && message.text === 'Just this chat') {
+    else if (!isGroup && message.text === 'Just this chat') {
+      const msgServerAddedPrivate = await ctx.reply(initMessage, {
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      })
       // If no chat was shared, use the current chat
       chatId = tgChatId
       messageId = msgServerAddedPrivate.message_id
     }
+    else {
+      return
+    }
+
     await conversation.external(async () => {
       // remove all previous liveMessages in the chat
       const liveMessages = await prisma.liveMessage.findMany({
