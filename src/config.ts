@@ -32,7 +32,7 @@ function createConfigFromEnvironment(environment: NodeJS.ProcessEnv) {
       .array(z.enum(API_CONSTANTS.ALL_UPDATE_TYPES))
       .default([]),
     BOT_ADMINS: z.array(z.number()).default([]),
-    CHAT_UPDATE_INTERVAL: z.number().default(60_000),
+    CHAT_UPDATE_INTERVAL_MS: z.number().default(60_000),
   })
 
   if (config.BOT_MODE === 'webhook') {

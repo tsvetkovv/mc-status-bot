@@ -8,7 +8,7 @@ import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
 import { config } from '#root/config.js'
 import { getLiveMessageText } from '#root/bot/helpers/live-messages-formatters.js'
 
-const intervalMs = config.CHAT_UPDATE_INTERVAL
+const intervalMs = config.CHAT_UPDATE_INTERVAL_MS
 
 export interface ServerStatus {
   serverId: string
