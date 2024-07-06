@@ -28,21 +28,6 @@ const requiredGroupPermissions = {
 const requiredChannelPermissions = {
   ...requiredGroupPermissions,
   can_post_messages: true,
-  can_manage_chat: true,
-
-  can_change_info: true,
-  can_delete_messages: true,
-  can_delete_stories: true,
-  can_edit_messages: true,
-  can_edit_stories: true,
-  can_invite_users: true,
-  can_manage_topics: true,
-  can_manage_video_chats: true,
-  can_pin_messages: true,
-  can_post_stories: true,
-  can_promote_members: true,
-  can_restrict_members: true,
-  is_anonymous: true,
 } satisfies ChatAdministratorRights
 
 export const selectChatKeyboard = new Keyboard()
