@@ -1,9 +1,8 @@
-// server-poller.ts
 import type { Context, MiddlewareFn } from 'grammy'
 import { prisma } from '#root/prisma/index.js'
 import { logger } from '#root/logger.js'
-import type { CommonPingResult } from '#root/minecraft/pingService.js'
-import { pingServer } from '#root/minecraft/pingService.js'
+import type { CommonPingResult } from '#root/minecraft/ping-service.js'
+import { pingServer } from '#root/minecraft/ping-service.js'
 import type { Bot } from '#root/bot/index.js'
 import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
 import { config } from '#root/config.js'

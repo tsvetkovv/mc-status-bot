@@ -21,14 +21,13 @@ import {
 import { errorHandler } from '#root/bot/handlers/index.js'
 import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { updateLogger } from '#root/bot/middlewares/index.js'
-import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
 import { addingServerConversation } from '#root/bot/conversations/index.js'
 import { addServerFeature } from '#root/bot/features/server.js'
 import { ServerPoller } from '#root/bot/middlewares/server-poller.js'
 import { pinnedFeature } from '#root/bot/features/remove-pinned.js'
-import { cancelConversationFeature } from '#root/bot/conversations/cancelConversation.js'
+import { cancelConversationFeature } from '#root/bot/conversations/cancel-conversation.js'
 
 interface Options {
   prisma: PrismaClientX
@@ -48,8 +47,7 @@ export function createBot(token: string, options: Options) {
   bot.api.config.use(parseMode('HTML'))
   bot.api.config.use(autoRetry())
 
-  if (config.isDev)
-    protectedBot.use(updateLogger())
+  protectedBot.use(updateLogger())
 
   protectedBot.use(autoChatAction(bot.api))
   protectedBot.use(hydrateReply)

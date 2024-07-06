@@ -1,4 +1,4 @@
-import { pingServer } from './pingService.js'
+import { pingServer } from './ping-service.js'
 import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
 

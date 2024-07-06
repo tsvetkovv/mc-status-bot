@@ -5,7 +5,7 @@ import type { Context } from '#root/bot/context.js'
 import { i18n } from '#root/bot/i18n.js'
 import { prisma } from '#root/prisma/index.js'
 import { logger } from '#root/logger.js'
-import { addServer } from '#root/minecraft/serverService.js'
+import { addServer } from '#root/minecraft/server-service.js'
 import { selectChatKeyboard } from '#root/bot/keyboards/select-chat.js'
 
 export const CONV_ADDING_SERVER = 'adding-server'

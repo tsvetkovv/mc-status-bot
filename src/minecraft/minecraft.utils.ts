@@ -3,7 +3,7 @@ import {
 } from 'date-fns'
 import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
-import { pingServer } from '#root/minecraft/pingService.js'
+import { pingServer } from '#root/minecraft/ping-service.js'
 
 const pingPollingInterval = 5_000
 
