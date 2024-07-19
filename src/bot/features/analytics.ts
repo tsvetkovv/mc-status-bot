@@ -130,7 +130,7 @@ function formatPlayerList(players: PlayerStats[]): string {
         timeString += `${hours}h `
       timeString += `${minutes}m`
 
-      return `${index + 1}. ${player.name}: ${timeString}`
+      return `${index + 1}. ${player.name} ~ ${timeString}`
     })
     .join('\n')
 }
