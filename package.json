@@ -32,6 +32,7 @@
     "@grammyjs/conversations": "^1.2.0",
     "@grammyjs/hydrate": "^1.4.1",
     "@grammyjs/i18n": "^1.0.2",
+    "@grammyjs/menu": "^1.2.2",
     "@grammyjs/parse-mode": "^1.10.0",
     "@grammyjs/storage-prisma": "^2.4.2",
     "@grammyjs/types": "^3.11.0",
@@ -46,6 +47,7 @@
     "minecraft-protocol": "^1.47.0",
     "pino": "^9.2.0",
     "pino-pretty": "^11.2.1",
+    "temporal-polyfill": "^0.2.5",
     "tsx": "^4.16.2",
     "znv": "^0.4.0",
     "zod": "^3.23.8"

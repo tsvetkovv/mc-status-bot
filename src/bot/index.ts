@@ -28,6 +28,7 @@ import { addServerFeature } from '#root/bot/features/server.js'
 import { ServerPoller } from '#root/bot/middlewares/server-poller.js'
 import { pinnedFeature } from '#root/bot/features/remove-pinned.js'
 import { cancelConversationFeature } from '#root/bot/conversations/cancel-conversation.js'
+import { analyticsFeature } from '#root/bot/features/analytics.js'
 
 interface Options {
   prisma: PrismaClientX
@@ -71,6 +72,7 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(adminFeature)
   protectedBot.use(addServerFeature)
   protectedBot.use(pinnedFeature)
+  protectedBot.use(analyticsFeature)
 
   if (isMultipleLocales)
     protectedBot.use(languageFeature)
