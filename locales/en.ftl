@@ -12,6 +12,8 @@ listservers_command =
     .description = See all servers
 livemessages_command =
     .description = See all live messages
+topplayers_command =
+    .description = See top players for the current server
 
 chats_command =
     .description = See chats with live messages

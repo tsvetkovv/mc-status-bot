@@ -24,14 +24,14 @@ async function trackPlayerSessions() {
 
   for (const server of servers) {
     const now = new Date()
-    logger.info(`Pinging ${server.address}`, server)
+    logger.debug(`Pinging ${server.address}`, server)
     // Ping the server to get the current online players
     const pingResult = await pingServer(server.address)
 
     if (pingResult.offline || !pingResult.players) {
       continue
     }
-    logger.info(`Ping result ${server.address}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
+    logger.debug(`Ping result ${server.address}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
 
     // Ensure all online players exist in the database
     const onlinePlayers = await prisma.$transaction(pingResult.players.map(player => prisma.player.upsert({
@@ -52,7 +52,7 @@ async function trackPlayerSessions() {
     // Update end time for players who are still online
     // if a user is not online for more than 3 minutes, consider them offline
     const lastDateToConsiderOnline = subMilliseconds(now, Math.max(pingPollingInterval * 1.5, 3 * 60_000))
-    logger.info(`Minimum time to be updated ${lastDateToConsiderOnline.toISOString()}`)
+    logger.debug(`Minimum time to be updated ${lastDateToConsiderOnline.toISOString()}`)
     const usersToUpdateOnline = {
       serverId: server.id,
       endTime: {
@@ -77,11 +77,11 @@ async function trackPlayerSessions() {
         },
       }),
     ])
-    logger.info(`Users updated online: ${usersUpdatedOnline.length}`)
+    logger.debug(`Users updated online: ${usersUpdatedOnline.length}`)
     const usersUpdatedOnlineUuid = usersUpdatedOnline.map(u => u.player.uuid)
     const newUsers = onlinePlayers.filter(onlinePlayer => !usersUpdatedOnlineUuid.includes(onlinePlayer.uuid))
 
-    logger.info(`Just joined users: ${newUsers.length}`)
+    logger.debug(`Just joined users: ${newUsers.length}`)
 
     await prisma.$transaction(
       newUsers.map(newUser => prisma.playerSession.create({
@@ -104,7 +104,7 @@ export function startServerPolling() {
 
     const endTime = performance.now()
 
-    logger.info({ msg: `Server polling completed`, elapsed: endTime - startTime })
+    logger.debug({ msg: `Server polling completed`, elapsed: endTime - startTime })
 
     setTimeout(scheduleTrackPlayerSessions, pingPollingInterval)
   }

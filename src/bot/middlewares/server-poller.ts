@@ -87,7 +87,7 @@ export class ServerPoller {
       finally {
         const endTime = performance.now()
 
-        logger.info({ msg: `Chat updating completed`, elapsed: endTime - startTime })
+        logger.debug({ msg: `Chat updating completed`, elapsed: endTime - startTime })
 
         this.scheduleNextPoll() // Schedule the next poll after completion
       }
@@ -176,7 +176,7 @@ export class ServerPoller {
       }
     }
 
-    logger.info('Completed server polling')
+    logger.debug('Completed server polling')
     return statuses
   }
 

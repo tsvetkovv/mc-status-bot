@@ -27,7 +27,7 @@ interface PlayerTimes {
 const composer = new Composer<Context>()
 
 composer.chatType(['private', 'group', 'supergroup'])
-  .command('top', logHandle('command-top'), async (ctx) => {
+  .command('topplayers', logHandle('command-topplayers'), async (ctx) => {
     const server = await getServerForChat(ctx.chat.id)
     if (!server) {
       await ctx.reply('No server found for this chat.')

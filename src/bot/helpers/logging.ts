@@ -12,7 +12,7 @@ export function logHandle(id: string): Middleware<Context> {
   return (ctx, next) => {
     ctx.logger.info({
       msg: `Handle "${id}"`,
-      ...(id.startsWith('unhandled') ? { update: getUpdateInfo(ctx) } : {}),
+      update: getUpdateInfo(ctx),
     })
 
     return next()

@@ -18,7 +18,7 @@ export async function addServer(address: string) {
   }
 
   const pingResponse = await pingServer(address)
-  logger.info({ msg: 'Pinged', pingResponse, server: address })
+  logger.debug({ msg: 'Pinged', pingResponse, server: address })
   if (pingResponse && !pingResponse.offline) {
     try {
       return await prisma.server.create({

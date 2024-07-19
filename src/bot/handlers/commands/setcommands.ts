@@ -26,6 +26,10 @@ function getPrivateChatCommands(localeCode: LanguageCode): BotCommand[] {
       command: 'addserver',
       description: i18n.t(localeCode, 'addserver_command.description'),
     },
+    {
+      command: 'topplayers',
+      description: i18n.t(localeCode, 'topplayers_command.description'),
+    },
   ]
 }
 
@@ -50,8 +54,13 @@ function getPrivateChatAdminCommands(localeCode: string): BotCommand[] {
   ]
 }
 
-function getGroupChatCommands(_localeCode: string): BotCommand[] {
-  return []
+function getGroupChatCommands(localeCode: string): BotCommand[] {
+  return [
+    {
+      command: 'topplayers',
+      description: i18n.t(localeCode, 'topplayers_command.description'),
+    },
+  ]
 }
 
 export async function setCommandsHandler(ctx: CommandContext<Context>) {
