@@ -77,7 +77,7 @@ async function getTopPlayers(serverId: string, startDate: Temporal.PlainDateTime
   })
 
   const playerTimes = aggregatePlayerTimes(playerSessions)
-  return sortAndLimitPlayers(playerTimes, 5)
+  return sortAndLimitPlayers(playerTimes, 20)
 }
 
 function aggregatePlayerTimes(playerSessions: (PlayerSession & { player: Player })[]): PlayerTimes {
