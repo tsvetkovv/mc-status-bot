@@ -23,12 +23,13 @@ import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { updateLogger } from '#root/bot/middlewares/index.js'
 import { logger } from '#root/logger.js'
 import type { PrismaClientX } from '#root/prisma/index.js'
-import { addingServerConversation } from '#root/bot/conversations/index.js'
+import { addingServerConversation } from '#root/bot/conversations/adding-server.js'
 import { addServerFeature } from '#root/bot/features/server.js'
 import { ServerPoller } from '#root/bot/middlewares/server-poller.js'
 import { pinnedFeature } from '#root/bot/features/remove-pinned.js'
 import { cancelConversationFeature } from '#root/bot/conversations/cancel-conversation.js'
 import { analyticsFeature } from '#root/bot/features/analytics.js'
+import { changingServerConversation } from '#root/bot/conversations/change-server.js'
 
 interface Options {
   prisma: PrismaClientX
@@ -66,6 +67,7 @@ export function createBot(token: string, options: Options) {
   protectedBot.use(conversations())
   protectedBot.use(cancelConversationFeature)
   protectedBot.use(addingServerConversation())
+  protectedBot.use(changingServerConversation())
 
   // Handlers
   protectedBot.use(welcomeFeature)

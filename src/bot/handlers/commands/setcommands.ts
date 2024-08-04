@@ -51,6 +51,10 @@ function getPrivateChatAdminCommands(localeCode: string): BotCommand[] {
       command: 'livemessages',
       description: i18n.t(localeCode, 'livemessages_command.description'),
     },
+    {
+      command: 'change_server',
+      description: i18n.t(localeCode, 'change_server_command.description'),
+    },
   ]
 }
 

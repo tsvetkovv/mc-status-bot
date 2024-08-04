@@ -1,8 +1,9 @@
 import { Composer } from 'grammy'
 import type { Context } from '#root/bot/context.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
-import { CONV_ADDING_SERVER } from '#root/bot/conversations/index.js'
 import { isAdmin } from '#root/bot/filters/index.js'
+import { CONV_ADDING_SERVER } from '#root/bot/conversations/adding-server.js'
+import { CONV_CHANGING_SERVER } from '#root/bot/conversations/change-server.js'
 
 const composer = new Composer<Context>()
 
@@ -31,6 +32,35 @@ adminFeature
     }
     await ctx.reply(msg)
   })
+
+adminFeature
+  .command('change_server', logHandle('command-change_server'), async (ctx) => {
+    const servers = await ctx.prisma.server.findMany({
+      select: {
+        id: true,
+        address: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    if (servers.length === 0) {
+      return ctx.reply('No servers found. Add a server first using /addserver command.')
+    }
+
+    const serverList = servers
+      .map(({ id, address }) => `${address} - /change_${id}`)
+      .join('\n')
+
+    await ctx.reply(`Select a server to change:\n\n${serverList}`)
+  })
+
+feature.hears(/\/change_(.+)/, logHandle('command-change-server-id'), async (ctx) => {
+  const serverId = ctx.match[1]
+  ctx.session.currentServerId = serverId
+  await ctx.conversation.enter(CONV_CHANGING_SERVER)
+})
 
 adminFeature
   .command('livemessages', logHandle('command-livemessages'), async (ctx) => {

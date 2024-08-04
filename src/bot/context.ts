@@ -10,7 +10,7 @@ import type { PrismaClientX } from '#root/prisma/index.js'
 import type { ServerPollerFlavor } from '#root/bot/middlewares/server-poller.js'
 
 export interface SessionData {
-  // field?: string;
+  currentServerId?: string
 }
 
 interface ExtendedContextFlavor {
