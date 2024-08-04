@@ -38,11 +38,21 @@ async function startPolling() {
   // start bot
   await bot.start({
     allowed_updates: config.BOT_ALLOWED_UPDATES,
-    onStart: ({ username }) =>
+    onStart: async ({ username }) => {
       logger.info({
         msg: 'Bot running...',
         username,
-      }),
+      })
+
+      for (const adminId of config.BOT_ADMINS) {
+        try {
+          await bot.api.sendMessage(adminId, 'I am up!')
+        }
+        catch (error) {
+          console.error(`Failed to send startup message to admin ${adminId}:`, error)
+        }
+      }
+    },
   })
 }
 
