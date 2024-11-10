@@ -23,10 +23,27 @@ adminFeature
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        playerSessions: {
+          orderBy: {
+            endTime: 'desc',
+          },
+          take: 1,
+          where: {
+            endTime: {
+              not: null,
+            },
+          },
+        },
+      },
     })
     const msg = allServers
-      .map(({ id, address }) => `- ${address} \n /remove_${id}`)
-      .join('\n')
+      .map(({ id, address, playerSessions }) => {
+        const lastSession = playerSessions[0]
+        const lastActive = lastSession ? `(Last active: ${lastSession?.endTime?.toLocaleDateString()})` : '(Never active)'
+        return `- ${address} ${lastActive}\n /server_remove_${id} \n /server_change_${id}`
+      })
+      .join('\n\n')
     if (!msg) {
       return ctx.reply('No servers found')
     }
@@ -56,10 +73,43 @@ adminFeature
     await ctx.reply(`Select a server to change:\n\n${serverList}`)
   })
 
-adminFeature.hears(/\/change_(.+)/, logHandle('command-change-server-id'), async (ctx) => {
+adminFeature.hears(/\/server_change_(.+)/, logHandle('command-server_change'), async (ctx) => {
   const serverId = ctx.match[1]
   ctx.session.currentServerId = serverId
   await ctx.conversation.enter(CONV_CHANGING_SERVER)
+})
+
+adminFeature.hears(/\/server_remove_(.+)/, logHandle('command-server_remove'), async (ctx) => {
+  const serverId = ctx.match[1]
+  if (serverId) {
+    const server = await ctx.prisma.server.findFirst({
+      where: {
+        id: serverId,
+      },
+    })
+    if (server) {
+      await ctx.reply(`Are you sure you want to remove server ${server.address}? /confirm_server_remove_${serverId}`)
+    }
+  }
+})
+
+adminFeature.hears(/\/confirm_server_remove_(.+)/, logHandle('command-confirm_server_remove_'), async (ctx) => {
+  const serverId = ctx.match[1]
+  if (serverId) {
+    const server = await ctx.prisma.server.findFirst({
+      where: {
+        id: serverId,
+      },
+    })
+    if (server) {
+      await ctx.prisma.server.delete({
+        where: {
+          id: serverId,
+        },
+      })
+      await ctx.reply('Server removed')
+    }
+  }
 })
 
 adminFeature
