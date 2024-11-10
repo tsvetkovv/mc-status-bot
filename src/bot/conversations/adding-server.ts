@@ -7,6 +7,7 @@ import { prisma } from '#root/prisma/index.js'
 import { logger } from '#root/logger.js'
 import { addServer } from '#root/minecraft/server-service.js'
 import { selectChatKeyboard } from '#root/bot/keyboards/select-chat.js'
+import { isAdmin } from '#root/bot/filters/index.js'
 
 export const CONV_ADDING_SERVER = 'adding-server'
 
@@ -61,8 +62,43 @@ async function handleAddingServerConversation({ ctx, conversation, proposedServe
       chatId = tgChatId
       messageId = msgServerAddedPrivate.message_id
     }
-    else {
-      return
+    else if (isAdmin(ctx)) {
+      // admin sends tgChatId, parse it, check if it exists in DB and use chatId and messageId from there
+      const tgChatIdFromAdmin = message.text
+      if (!tgChatIdFromAdmin) {
+        return
+      }
+      const parsedChatId = Number.parseInt(tgChatIdFromAdmin)
+      if (Number.isNaN(parsedChatId)) {
+        return
+      }
+      const chat = await conversation.external(async () => {
+        return prisma.chatWatcher.findFirst({
+          select: {
+            liveMessages: {
+              select: {
+                tgMessageId: true,
+              },
+              take: 1,
+            },
+          },
+          where: {
+            tgChatId: parsedChatId,
+          },
+        })
+      })
+
+      const messageIdFromDB = chat?.liveMessages.at(0)?.tgMessageId
+
+      if (messageIdFromDB) {
+        chatId = parsedChatId
+        messageId = messageIdFromDB
+        await ctx.reply(`The server <code>${proposedServer}</code> has been added`, {
+          reply_markup: {
+            remove_keyboard: true,
+          },
+        })
+      }
     }
 
     await conversation.external(async () => {
@@ -127,7 +163,7 @@ export function addingServerConversation() {
     async (conversation: Conversation<Context>, ctx: Context) => {
       await conversation.run(i18n)
 
-      await ctx.reply('Give me a server address')
+      await ctx.reply('Give me a server address or /cancel')
 
       const { message } = await conversation.wait()
 
