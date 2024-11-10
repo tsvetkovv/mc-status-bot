@@ -56,7 +56,7 @@ adminFeature
     await ctx.reply(`Select a server to change:\n\n${serverList}`)
   })
 
-feature.hears(/\/change_(.+)/, logHandle('command-change-server-id'), async (ctx) => {
+adminFeature.hears(/\/change_(.+)/, logHandle('command-change-server-id'), async (ctx) => {
   const serverId = ctx.match[1]
   ctx.session.currentServerId = serverId
   await ctx.conversation.enter(CONV_CHANGING_SERVER)
@@ -88,7 +88,7 @@ adminFeature.command('stoppolling', async (ctx) => {
   await ctx.reply('Server polling stopped.')
 })
 
-feature.hears(/\/remove_livemessage_(.+)/, logHandle('command-remove_livemessage_'), async (ctx) => {
+adminFeature.hears(/\/remove_livemessage_(.+)/, logHandle('command-remove_livemessage_'), async (ctx) => {
   const idToRemove = ctx.match[1]
 
   if (idToRemove) {
@@ -102,7 +102,8 @@ feature.hears(/\/remove_livemessage_(.+)/, logHandle('command-remove_livemessage
     }
   }
 })
-feature.hears(/\/confirm_remove_livemessage_(.+)/, logHandle('command-confirm_remove_livemessage_'), async (ctx) => {
+
+adminFeature.hears(/\/confirm_remove_livemessage_(.+)/, logHandle('command-confirm_remove_livemessage_'), async (ctx) => {
   const idToRemove = ctx.match[1]
   if (idToRemove) {
     const liveMessage = await ctx.prisma.liveMessage.delete({
