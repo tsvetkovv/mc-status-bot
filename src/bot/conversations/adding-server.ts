@@ -1,13 +1,13 @@
-import type { Conversation } from '@grammyjs/conversations'
-import { createConversation } from '@grammyjs/conversations'
-import type { Prisma } from '@prisma/client'
 import type { Context } from '#root/bot/context.js'
+import type { Conversation } from '@grammyjs/conversations'
+import type { Prisma } from '@prisma/client'
+import { isAdmin } from '#root/bot/filters/index.js'
 import { i18n } from '#root/bot/i18n.js'
-import { prisma } from '#root/prisma/index.js'
+import { selectChatKeyboard } from '#root/bot/keyboards/select-chat.js'
 import { logger } from '#root/logger.js'
 import { addServer } from '#root/minecraft/server-service.js'
-import { selectChatKeyboard } from '#root/bot/keyboards/select-chat.js'
-import { isAdmin } from '#root/bot/filters/index.js'
+import { prisma } from '#root/prisma/index.js'
+import { createConversation } from '@grammyjs/conversations'
 
 export const CONV_ADDING_SERVER = 'adding-server'
 
@@ -38,8 +38,8 @@ async function handleAddingServerConversation({ ctx, conversation, proposedServe
     })
 
     const { message } = await conversation.waitFor(['message:chat_shared', 'message:text'])
-    let chatId: number
-    let messageId: number
+    let chatId: number | undefined
+    let messageId: number | undefined
     const initMessage = `Gathering info about <code>${proposedServer}</code>...`
 
     const isGroup = !!message.chat_shared
@@ -99,6 +99,10 @@ async function handleAddingServerConversation({ ctx, conversation, proposedServe
           },
         })
       }
+    }
+
+    if (messageId === undefined || chatId === undefined) {
+      return
     }
 
     await conversation.external(async () => {
