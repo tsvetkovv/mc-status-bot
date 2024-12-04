@@ -10,6 +10,7 @@ export interface CommonPingResult {
   latency?: number
   favicon?: string
   players?: { uuid: string, name: string }[]
+  offline: boolean
 }
 
 export function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>): CommonPingResult {
@@ -21,6 +22,7 @@ export function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>):
       motd: result.motd,
       protocol: result.protocol,
       version: result.version,
+      offline: !result.version,
     }
   }
   else {
@@ -34,6 +36,7 @@ export function toCommonPingResult(result: Awaited<ReturnType<typeof mc.ping>>):
       version: result.version.name,
       latency: result.latency,
       favicon: result.favicon,
+      offline: !result.version,
     }
   }
 }
@@ -49,7 +52,7 @@ export async function pingServer(address: string) {
       noPongTimeout: 1000,
     })
 
-    return { ...toCommonPingResult(pingResponse), host, port, offline: false } as const
+    return { ...toCommonPingResult(pingResponse), host, port } as const
   }
   catch (error) {
     logger.info('Ping failed', address, error)
