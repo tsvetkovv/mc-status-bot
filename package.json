@@ -10,8 +10,8 @@
   "author": "deptyped <deptyped@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=22",
+    "npm": ">=10"
   },
   "scripts": {
     "lint": "eslint .",
