@@ -38,6 +38,8 @@ model Server {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  lastPingDate DateTime?
+
   isPollingEnabled Boolean         @default(true)
   playerSessions   PlayerSession[]
   liveMessage      LiveMessage[]

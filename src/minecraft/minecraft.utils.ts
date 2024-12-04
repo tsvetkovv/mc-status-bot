@@ -1,9 +1,8 @@
-import {
-  subMilliseconds,
-} from 'date-fns'
 import { logger } from '#root/logger.js'
-import { prisma } from '#root/prisma/index.js'
 import { pingServer } from '#root/minecraft/ping-service.js'
+import { prisma } from '#root/prisma/index.js'
+
+import { Temporal } from 'temporal-polyfill'
 
 const pingPollingInterval = 5_000
 
@@ -20,7 +19,16 @@ export interface CommonPingResult {
 
 // Function to track player sessions
 async function trackPlayerSessions() {
-  const servers = await prisma.server.findMany()
+  const servers = await prisma.server.findMany({
+    where: {
+      isPollingEnabled: true,
+    },
+    select: {
+      id: true,
+      address: true,
+      lastPingDate: true,
+    },
+  })
 
   for (const server of servers) {
     const now = new Date()
@@ -28,7 +36,23 @@ async function trackPlayerSessions() {
     // Ping the server to get the current online players
     const pingResult = await pingServer(server.address)
 
-    if (pingResult.offline || !pingResult.players) {
+    if (pingResult.offline) {
+      // if the server is offline more than 7 days, disable polling for it
+      const lastPingDate = server.lastPingDate && Temporal.Instant.from(server.lastPingDate.toISOString())
+      if (!lastPingDate || lastPingDate.until(Temporal.Now.instant()).days > 7) {
+        logger.warn(`Server ${server.address} is offline for more than 7 days, disabling polling`)
+        await prisma.server.update({
+          where: {
+            id: server.id,
+          },
+          data: {
+            isPollingEnabled: false,
+          },
+        })
+      }
+      continue // skip the rest of the code if the server is offline
+    }
+    if (!pingResult.players) {
       continue
     }
     logger.debug(`Ping result ${server.address}. Online: ${pingResult.players.map(p => p.name).join(', ')}`, pingResult)
@@ -51,7 +75,14 @@ async function trackPlayerSessions() {
 
     // Update end time for players who are still online
     // if a user is not online for more than 3 minutes, consider them offline
-    const lastDateToConsiderOnline = subMilliseconds(now, Math.max(pingPollingInterval * 1.5, 3 * 60_000))
+    const lastDateToConsiderOnline = new Date(
+      Temporal.Now.instant()
+        .subtract({
+          milliseconds: Math.max(pingPollingInterval * 1.5, 3 * 60_000),
+        })
+        .toString(),
+    )
+
     logger.debug(`Minimum time to be updated ${lastDateToConsiderOnline.toISOString()}`)
     const usersToUpdateOnline = {
       serverId: server.id,
@@ -74,6 +105,14 @@ async function trackPlayerSessions() {
         where: usersToUpdateOnline,
         data: {
           endTime: now,
+        },
+      }),
+      prisma.server.update({
+        where: {
+          id: server.id,
+        },
+        data: {
+          lastPingDate: now,
         },
       }),
     ])
