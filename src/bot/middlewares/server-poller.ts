@@ -1,12 +1,12 @@
-import type { Context, MiddlewareFn } from 'grammy'
-import { prisma } from '#root/prisma/index.js'
-import { logger } from '#root/logger.js'
-import type { CommonPingResult } from '#root/minecraft/ping-service.js'
-import { pingServer } from '#root/minecraft/ping-service.js'
 import type { Bot } from '#root/bot/index.js'
-import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
-import { config } from '#root/config.js'
+import type { CommonPingResult } from '#root/minecraft/ping-service.js'
+import type { Context, MiddlewareFn } from 'grammy'
 import { getLiveMessageText } from '#root/bot/helpers/live-messages-formatters.js'
+import { config } from '#root/config.js'
+import { logger } from '#root/logger.js'
+import { startServerPolling } from '#root/minecraft/minecraft.utils.js'
+import { pingServer } from '#root/minecraft/ping-service.js'
+import { prisma } from '#root/prisma/index.js'
 
 const intervalMs = config.CHAT_UPDATE_INTERVAL_MS
 

@@ -1,6 +1,6 @@
-import { pingServer } from './ping-service.js'
 import { logger } from '#root/logger.js'
 import { prisma } from '#root/prisma/index.js'
+import { pingServer } from './ping-service.js'
 
 export async function addServer(address: string) {
   logger.info({ msg: `Adding server`, server: address })

@@ -6,8 +6,7 @@ Bot based on [template](https://github.com/bot-base/telegram-bot-template) that 
 
 - Monitor minecraft servers by pinging them
 - Sending 'the live message' to chat/group/channel that automatically updates with the current server online
-- 
-
+-
 
 ## Usage
 
@@ -107,7 +106,6 @@ project-root/
       ├── logger.ts # Logging setup
       └── main.ts   # Application entry point
 ```
-
 
 ## Environment Variables
 
@@ -227,7 +225,7 @@ project-root/
         Use this to specify user IDs that have special privileges, such as executing <code>/setcommands</code>. <br/>
         Defaults to an empty array.
     </td>
-  </tr>  
+  </tr>
   <tr>
     <td>CHAT_UPDATE_INTERVAL_MS</td>
     <td>

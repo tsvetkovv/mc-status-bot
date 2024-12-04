@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 
 import process from 'node:process'
-import { PrismaAdapter } from '@grammyjs/storage-prisma'
-import { prisma } from './prisma/index.js'
 import { createBot } from '#root/bot/index.js'
 import { config } from '#root/config.js'
 import { logger } from '#root/logger.js'
 import { createServer, createServerManager } from '#root/server/index.js'
+import { PrismaAdapter } from '@grammyjs/storage-prisma'
+import { prisma } from './prisma/index.js'
 
 function onShutdown(cleanUp: () => Promise<void>) {
   let isShuttingDown = false
@@ -105,8 +105,10 @@ async function startWebhook() {
 
 try {
   if (config.BOT_MODE === 'webhook')
+  // eslint-disable-next-line antfu/no-top-level-await
     await startWebhook()
   else if (config.BOT_MODE === 'polling')
+  // eslint-disable-next-line antfu/no-top-level-await
     await startPolling()
 }
 catch (error) {

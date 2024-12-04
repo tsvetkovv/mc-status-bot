@@ -1,7 +1,7 @@
 import process from 'node:process'
-import z from 'zod'
-import { parseEnv, port } from 'znv'
 import { API_CONSTANTS } from 'grammy'
+import { parseEnv, port } from 'znv'
+import z from 'zod'
 
 try {
   process.loadEnvFile()

@@ -1,8 +1,8 @@
+import type { Context } from '#root/bot/context.js'
 import type { BotCommand, LanguageCode } from '@grammyjs/types'
 import type { CommandContext } from 'grammy'
 import { i18n, isMultipleLocales } from '#root/bot/i18n.js'
 import { config } from '#root/config.js'
-import type { Context } from '#root/bot/context.js'
 
 function isValidLanguageCode(_code: string): _code is LanguageCode {
   // TODO: validate language code

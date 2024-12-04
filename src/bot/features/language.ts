@@ -1,9 +1,9 @@
-import { Composer } from 'grammy'
-import { changeLanguageData } from '#root/bot/callback-data/index.js'
 import type { Context } from '#root/bot/context.js'
+import { changeLanguageData } from '#root/bot/callback-data/index.js'
 import { logHandle } from '#root/bot/helpers/logging.js'
 import { i18n } from '#root/bot/i18n.js'
 import { createChangeLanguageKeyboard } from '#root/bot/keyboards/index.js'
+import { Composer } from 'grammy'
 
 const composer = new Composer<Context>()
 

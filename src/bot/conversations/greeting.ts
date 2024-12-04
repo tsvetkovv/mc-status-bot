@@ -1,7 +1,7 @@
-import type { Conversation } from '@grammyjs/conversations'
-import { createConversation } from '@grammyjs/conversations'
 import type { Context } from '#root/bot/context.js'
+import type { Conversation } from '@grammyjs/conversations'
 import { i18n } from '#root/bot/i18n.js'
+import { createConversation } from '@grammyjs/conversations'
 
 export const GREETING_CONVERSATION = 'greeting'
 

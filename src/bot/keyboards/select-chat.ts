@@ -1,5 +1,5 @@
-import { Keyboard } from 'grammy'
 import type { ChatAdministratorRights } from '@grammyjs/types'
+import { Keyboard } from 'grammy'
 
 const noOpPermissions = {
   can_change_info: false,

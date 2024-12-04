@@ -1,16 +1,16 @@
+import type { Bot } from '#root/bot/index.js'
 import type { AddressInfo } from 'node:net'
-import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
+import type { Env } from './environment.js'
+import { config } from '#root/config.js'
+import { prisma } from '#root/prisma/index.js'
+import { requestLogger } from '#root/server/middlewares/request-logger.js'
 import { serve } from '@hono/node-server'
 import { webhookCallback } from 'grammy'
+import { Hono } from 'hono'
+import { HTTPException } from 'hono/http-exception'
 import { getPath } from 'hono/utils/url'
-import { requestId } from './middlewares/request-id.js'
 import { logger } from './middlewares/logger.js'
-import type { Env } from './environment.js'
-import type { Bot } from '#root/bot/index.js'
-import { config } from '#root/config.js'
-import { requestLogger } from '#root/server/middlewares/request-logger.js'
-import { prisma } from '#root/prisma/index.js'
+import { requestId } from './middlewares/request-id.js'
 
 export function createServer(bot: Bot) {
   const server = new Hono<Env>()
@@ -50,7 +50,7 @@ export function createServer(bot: Bot) {
       await prisma.user.findFirst()
       return c.text('ok')
     }
-    catch (e) {
+    catch {
       return c.text('error', { status: 500 })
     }
   })

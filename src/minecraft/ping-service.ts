@@ -1,5 +1,5 @@
-import mc from 'minecraft-protocol'
 import { logger } from '#root/logger.js'
+import mc from 'minecraft-protocol'
 
 export interface CommonPingResult {
   maxPlayers: number
